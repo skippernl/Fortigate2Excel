@@ -11,9 +11,10 @@ The Parse-FortiGateRules reads a FortiGate config file and pulls out the rules f
 .\Parse-FortiGateRules.ps1 -fortiGateConfig "c:\temp\config.conf"
 Parses a FortiGate config file and places the CSV file in the same folder where the config was found.
 .NOTES
-Author: Drew Hjelm (@drewhjelm)
-Adapted by : Xander Angenent 
-Last Modified: 10/29/19
+Author: Drew Hjelm (@drewhjelm) (creates csv of ruleset only)
+Adapted by : Xander Angenent (@XaAng70)
+Last Modified: 26/11/19
+#Estimated completion time from http://mylifeismymessage.net/1672/
 #>
 Param
 (
@@ -153,6 +154,34 @@ Function InitRouterPolicy {
     $InitRule | Add-Member -type NoteProperty -name output-device -Value ""
     $InitRule | Add-Member -type NoteProperty -name comments -Value ""
     return $InitRule
+}
+Function InitRouterAccessList {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name prefix -Value ""
+    $InitRule | Add-Member -type NoteProperty -name exact-match -Value ""
+    #default action is allow it gets overwritten if needed
+    $InitRule | Add-Member -type NoteProperty -name action -Value "allow"
+    return $InitRule    
+}
+Function InitRouterDistributeList {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name "access-list" -Value ""   
+    return $InitRule       
+}
+Function InitRouterNetwork {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name prefix -Value ""   
+    return $InitRule       
+}
+Function InitRouterRedistribute {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Redistribute -Value ""
+    #Default is disabled
+    $InitRule | Add-Member -type NoteProperty -name status -Value "Disabled"   
+    return $InitRule       
 }
 Function InitRouterOSPFInterface {
     $InitRule = New-Object System.Object;
@@ -599,6 +628,113 @@ Function CreateExcelSheetVirtualWanLink {
     $UsedRange = $Sheet.usedRange                  
     $UsedRange.EntireColumn.AutoFit() | Out-Null                  
 }
+
+Function CreateExcelSheetOSPF {
+    $row = 1
+    $Sheet = $workbook.Worksheets.Add()
+    $SheetName = "Router-$RouterSection$VdomName"
+    $Sheet.Name = $SheetName
+    $Column=1    
+    $excel.cells.item($row,$Column) = "Router ID"
+    ChangeFontExcelCell $Sheet $row $Column
+    $Column++
+    $excel.cells.item($row,$Column) = $OSPFRouterID
+    $row++
+    $Column=1 
+    $excel.cells.item($row,$Column) = "OSPF Area"
+    ChangeFontExcelCell $Sheet $row $Column
+    $Column++
+    $excel.cells.item($row,$Column) = $OSPFRouterArea
+    $row++   
+    if ($RouterNetworkArray) {
+        $Column=1
+        $excel.cells.item($row,$Column) = "OSPF Networks"
+        ChangeFontExcelCell $Sheet $row $Column 
+        $Row++       
+        $NoteProperties = $RouterNetworkArray | get-member -Type NoteProperty
+        foreach ($Noteproperty in $NoteProperties) {
+            $excel.cells.item($row,$Column) = $Noteproperty.Name
+            $Column++
+         }
+        $row++      
+        Foreach ($ArrayMember in $RouterNetworkArray) {
+            $Column=1 
+            foreach ($Noteproperty in $NoteProperties) {
+                $PropertyString = [string]$NoteProperty.Name
+                $Value = $ArrayMember.$PropertyString
+                $excel.cells.item($row,$Column) = $Value
+                $Column++
+            }                      
+            $row++   
+        }
+    }    
+    if ($RouterInterfaceArray) {
+        $Column=1
+        $excel.cells.item($row,$Column) = "OSPF Interfaces"
+        ChangeFontExcelCell $Sheet $row $Column 
+        $Row++      
+        $NoteProperties = $RouterInterfaceArray | get-member -Type NoteProperty
+        foreach ($Noteproperty in $NoteProperties) {
+            $excel.cells.item($row,$Column) = $Noteproperty.Name
+            $Column++
+         }
+        $row++      
+        Foreach ($ArrayMember in $RouterInterfaceArray) {
+            $Column=1 
+            foreach ($Noteproperty in $NoteProperties) {
+                $PropertyString = [string]$NoteProperty.Name
+                $Value = $ArrayMember.$PropertyString
+                $excel.cells.item($row,$Column) = $Value
+                $Column++
+            }                      
+            $row++   
+        }
+    } 
+    $Column=1
+    $excel.cells.item($row,$Column) = "OSPF Passive Interfaces"
+    ChangeFontExcelCell $Sheet $row $Column 
+    $Column++
+    $excel.cells.item($row,$Column) = $OSPFPassiveInterface 
+    $Row++  
+    if ($RouterRedistibuteArray) {
+        $Column=1
+        $excel.cells.item($row,$Column) = "Redistribute routes"
+        ChangeFontExcelCell $Sheet $row $Column
+        #Make the default that no routes are redistibuted. If there are redistubuted routes this field wil get overwritten.
+        $excel.cells.item($row,$Column+1) = "none"   
+        Foreach ($ArrayMember in $RouterRedistibuteArray) {
+            if ($ArrayMember.status -eq "enable") {
+                $Column++
+                $excel.cells.item($row,$Column) = $ArrayMember.Redistribute
+            }                        
+        }
+        $Row++ 
+    }       
+    if ($RouterDistibuteListArray) {
+        $Column=1
+        $excel.cells.item($row,$Column) = "OSPF Distributelist"
+        ChangeFontExcelCell $Sheet $row $Column   
+        $Row++     
+        $NoteProperties = $RouterDistibuteListArray| get-member -Type NoteProperty
+        foreach ($Noteproperty in $NoteProperties) {
+            $excel.cells.item($row,$Column) = $Noteproperty.Name
+            $Column++
+         }
+        $row++      
+        Foreach ($ArrayMember in $RouterDistibuteListArray) {
+            $Column=1 
+            foreach ($Noteproperty in $NoteProperties) {
+                $PropertyString = [string]$NoteProperty.Name
+                $Value = $ArrayMember.$PropertyString
+                $excel.cells.item($row,$Column) = $Value
+                $Column++
+            }                      
+            $row++   
+        }
+    }     
+    $UsedRange = $Sheet.usedRange                  
+    $UsedRange.EntireColumn.AutoFit() | Out-Null      
+}
 if (!( Test-Path "$fortigateConfig" )) {
     Write-Output "[!] ERROR: Could not find FortiGate config file at $fortigateConfig."
     exit 1
@@ -652,6 +788,11 @@ $DHCPReservedAddressArray = @()
 $VirtualWanLinkMemberArray = @()
 $VirtualWanLinkHealthCheckArray = @()
 $VirtualWanLinkServiceArray = @()
+$RouterAccessListArray = @()
+$RouterRedistibuteArray = @()
+$RouterInterfaceArray = @()
+$RouterNetworkArray = @()
+$RouterDistibuteListArray = @()
 foreach ($Line in $loadedConfig) {
     $Proc = $Counter/$MaxCounter*100
     $elapsedTime = $(get-date) - $startTime 
@@ -666,6 +807,14 @@ foreach ($Line in $loadedConfig) {
     switch($ConfigLineArray[0]) {
         "config" {
             switch($ConfigLineArray[1]) {
+                "area" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "ospfarea"                      
+                } 
+                "distribute-list" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "Routerdistributelist"                 
+                }                 
                 "health-check" {
                     $SUBSection = $True
                     $SUBSectionConfig = "virtualwanlinkhealthcheck"                 
@@ -677,14 +826,33 @@ foreach ($Line in $loadedConfig) {
                 "members" {
                     $SUBSection = $True
                     $SUBSectionConfig = "virtualwanlinkmember"                     
-                }                
+                }   
+                "network" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "RouterNetwork"                       
+                }             
                 "options" {
                     $SUBSection = $True
                     $SUBSectionConfig = "dhcpoptions"
                 }
+                "ospf-interface" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "ospfinterface"                    
+                }
+                "redistribute" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "routerredistribute"
+                    $Value = CleanupLine $ConfigLine
+                    $RouterRedistribute = InitRouterRedistribute
+                    $RouterRedistribute | Add-Member -MemberType NoteProperty -Name "Redistribute" -Value $Value -force
+                }
                 "reserved-address" {
                     $SUBSection = $True
                     $SUBSectionConfig = "dhcpreservedaddress"                 
+                }
+                "rule" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "RouterAccessListRule"                     
                 }
                 "service" {
                     $SUBSection = $True
@@ -730,6 +898,28 @@ foreach ($Line in $loadedConfig) {
                         }                 
                     }
                 }  
+                "router" {
+                    switch($ConfigLineArray[2]) {
+                        "Access-list" {
+                            $ConfigSection = "ConfigRouterAccessList"
+                            Write-Output "Config router access-list line found."                            
+                        }
+                        "static" {
+                            $ConfigSection = "ConfigRouterStatic"
+                            Write-Output "Config router static line found."
+                        }
+                        "policy" {
+                            $ConfigSection = "ConfigRouterPolicy"
+                            Write-Output "Config router policy line found."
+                        }
+                        default {
+                            #Router section default (redistribute section)
+                            $RouterSection = $ConfigLineArray[2]
+                            $ConfigSection = "ConfigRouter$RouterSection"
+                            Write-Output "Config router $RouterSection found."
+                        }
+                    }
+                }
                 "system" {
                     switch($ConfigLineArray[2]) {
                         "dhcp" {
@@ -774,18 +964,6 @@ foreach ($Line in $loadedConfig) {
                         }
                     }
                 }
-                "router" {
-                    switch($ConfigLineArray[2]) {
-                        "static" {
-                            $ConfigSection = "ConfigRouterStatic"
-                            Write-Output "Config router static line found."
-                        }
-                        "policy" {
-                            $ConfigSection = "ConfigRouterPolicy"
-                            Write-Output "Config router policy line found."
-                        }
-                    }
-                }
             }
         }
         "edit" {
@@ -805,11 +983,29 @@ foreach ($Line in $loadedConfig) {
                             $DHCPReservedAddress = InitDHCPReservedAddress
                             $DHCPReservedAddress | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force
                         }
+                        "ospfarea"  {
+                            $OSPFRouterArea = $Value
+                        }
+                        "RouterDistributeList" {
+                            $RouterDistibuteList = InitRouterDistributeList
+                            $RouterDistibuteList  | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force
+                        }
+                        "RouterNetwork" {
+                            $RouterNetwork = InitRouterNetwork
+                            $RouterNetwork | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force
+                        }
+                        "ospfinterface" {
+                            $OSPFInterface = InitRouterOSPFInterface
+                            $OSPFInterface | Add-Member -MemberType NoteProperty -Name "Interface" -Value $Value -forc
+                        }
+                        "RouterAccessListRule" {
+                            $RouterAccessList = InitRouterAccessList
+                            $RouterAccessList | Add-Member -MemberType NoteProperty -Name "Name" -Value $RouterAccessListName -force
+                            $RouterAccessList | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force
+                        }
                         "virtualwanlinkhealthcheck" {
                             $VirtualWanLinkHealthCheck = InitVirtualWanLinkHealthCheck
                             $VirtualWanLinkHealthCheck | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
-                            #$Value
-                            #$VirtualWanLinkHealthCheck
                         }                        
                         "virtualwanlinkmember" {
                             $VirtualWanLinkMember = InitVirtualWanLinkMember
@@ -850,17 +1046,8 @@ foreach ($Line in $loadedConfig) {
                             $rule = InitFirewallAddressGroup
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
                         } 
-                        "ConfigSystemInterface" {
-                            $rule = InitSytemInterface
-                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
-                        }
-                        "Configvpnipsecphase1" {
-                            $rule = Initvpnipsecphase1
-                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
-                        }
-                        "Configvpnipsecphase2" {
-                            $rule = Initvpnipsecphase2
-                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
+                        "ConfigRouterAccessList" {
+                            $RouterAccessListName = $Value
                         }
                         "ConfigRouterStatic" {
                             $rule = InitRouterStatic
@@ -869,6 +1056,10 @@ foreach ($Line in $loadedConfig) {
                         "ConfigRouterPolicy" {
                             $rule = InitRouterPolicy
                             $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force
+                        }
+                        "ConfigSystemInterface" {
+                            $rule = InitSytemInterface
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
                         }
                         "ConfigFirewallServiceCategory" {
                             $rule = InitFirewallServiceCategory
@@ -881,11 +1072,19 @@ foreach ($Line in $loadedConfig) {
                         "ConfigFirewallServiceGroup" {
                             $rule = InitFirewallServiceGroup
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
-                        }   
+                        }                          
                         "ConfigFirewallVIP" {
                             $rule = InitFirewallVip
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force                        
                         }
+                        "Configvpnipsecphase1" {
+                            $rule = Initvpnipsecphase1
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
+                        }
+                        "Configvpnipsecphase2" {
+                            $rule = Initvpnipsecphase2
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
+                        } 
                     }
                 }
             }
@@ -904,6 +1103,27 @@ foreach ($Line in $loadedConfig) {
                         "dhcpreservedaddress" {
                             $DHCPReservedAddress | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }  
+                        "RouterDistributeList" {
+                            $RouterDistibuteList  | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                        }
+                        "RouterNetwork" {
+                            $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3]
+                            $RouterNetwork |  Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                        }
+                        "RouterRedistribute" {
+                            $RouterRedistribute | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force                            
+                        }
+                        "ospfinterface" {
+                            $OSPFInterface | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                        }
+                        "RouterAccessListRule" {
+                            if ($ConfigLineArray[1] -eq "prefix") {
+                                if ($ConfigLineArray[2] -eq "any") { $Value = "0.0.0.0/0" } 
+                                else { $Value = $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3] }
+                                $RouterAccessList | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -forc
+                            }
+                            else { $RouterAccessList | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force }
+                        }
                         "virtualwanlinkhealthcheck" {
                             if ($ConfigLineArray[1] -eq "members") {
                                 if ($ConfigLineArray.Count -gt 3) {
@@ -1003,6 +1223,10 @@ foreach ($Line in $loadedConfig) {
                                  $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                                  }                        
                         }
+                        "ConfigRouterOSPF" {
+                            if ($ConfigLineArray[1] -eq 'router-id') { $OSPFRouterID = $ConfigLineArray[2] }
+                            elseif ($ConfigLineArray[1] -eq 'passive-Interface') { $OSPFPassiveInterface = $Value }
+                        }
                         "ConfigRouterPolicy" {
                             if (($ConfigLineArray[1] -eq "src" ) -or ($ConfigLineArray[1] -eq "dst" )) {
                                 $Value = GetSubnetCIDRPolicy $ConfigLineArray[2]
@@ -1030,6 +1254,18 @@ foreach ($Line in $loadedConfig) {
                         "dhcpreservedaddress" {
                             $DHCPReservedAddressArray += $DHCPReservedAddress
                         } 
+                        "RouterDistibuteList" {
+                            $RouterDistibuteListArray += $RouterDistibuteList
+                        }
+                        "RouterNetwork" {
+                            $RouterNetworkArray += $RouterNetwork
+                        }
+                        "ospfinterface" {
+                            $RouterInterfaceArray += $OSPFInterface
+                        }
+                        "RouterAccessListRule" {
+                            $RouterAccessListArray += $RouterAccessList
+                        }
                         "virtualwanlinkhealthcheck" {
                             $VirtualWanLinkHealthCheckArray += $VirtualWanLinkHealthCheck
                         }
@@ -1055,6 +1291,9 @@ foreach ($Line in $loadedConfig) {
         "end" {
             if ($SUBSection) {
                 $SUBSection = $False
+                if ($SUBSectionConfig -eq "routerredistribute") { 
+                    $RouterRedistibuteArray += $RouterRedistribute 
+                } 
             }
             else {            
                 if ($ConfigSection) {
@@ -1090,6 +1329,30 @@ foreach ($Line in $loadedConfig) {
                         "ConfigFirewallServiceGroup" { 
                             $rulelist = $rulelist | Sort-Object Name
                             CreateExcelSheet "Services-Group$VdomName" $rulelist  
+                        }
+                        "ConfigRouterAccessList" {
+                            $RouterAccessListArray = $RouterAccessListArray | Sort-Object Name,ID
+                            CreateExcelSheet "Router-AccesList$vdomName" $RouterAccessListArray
+                        }
+                        "ConfigRouter$RouterSection" {
+                            switch ($ConfigSection) {
+                                "ConfigRouterStatic" { 
+                                    $rulelist = $rulelist | Sort-Object ID
+                                    CreateExcelSheet "Router-Static$VdomName" $rulelist 
+                                }
+                                "ConfigRouterOSPF" {
+                                    CreateExcelSheetOSPF                               
+                                }
+                                "ConfigRouterPolicy" { 
+                                    $rulelist = $rulelist | Sort-Object ID
+                                    CreateExcelSheet "Router-Policy$VdomName" $rulelist 
+                                }
+                                default {
+                                    CreateExcelSheet "Router-$RouterSection$VdomName" $RouterRedistibuteArray                                
+                                }
+                            } 
+                            $RouterAccessListArray = @()
+                            $RouterRedistibuteArray = @()  
                         }
                         "ConfigSystemGlobal" {
                             $FirstSheet.Cells.Item(2,1) = 'Excel Creation Date'
@@ -1127,14 +1390,6 @@ foreach ($Line in $loadedConfig) {
                         }
                         "ConfigSystemVirtualWanLink" {
                             CreateExcelSheetVirtualWanLink
-                        }
-                        "ConfigRouterStatic" { 
-                            $rulelist = $rulelist | Sort-Object ID
-                            CreateExcelSheet "Router-Static$VdomName" $rulelist 
-                        }
-                        "ConfigRouterPolicy" { 
-                            $rulelist = $rulelist | Sort-Object ID
-                            CreateExcelSheet "Router-Policy$VdomName" $rulelist 
                         }
                         "Configvpnipsecphase1" { 
                             $rulelist = $rulelist | Sort-Object Name
