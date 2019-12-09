@@ -231,6 +231,22 @@ Function InitRouterStatic {
     $InitRule | Add-Member -type NoteProperty -name virtual-wan-link -Value ""
     return $InitRule
 }
+Function InitSystemGlobal {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name admin-sport -Value "443"
+    $InitRule | Add-Member -type NoteProperty -name admin-Cert -Value "Selfsigned"
+    $InitRule | Add-Member -type NoteProperty -name admintimeout -Value ""
+    $InitRule | Add-Member -type NoteProperty -name alias -Value "    "
+    $InitRule | Add-Member -type NoteProperty -name disk-usage -Value ""
+    $InitRule | Add-Member -type NoteProperty -name hostname -Value ""
+    $InitRule | Add-Member -type NoteProperty -name revision-backup-on-logout -Value ""
+    $InitRule | Add-Member -type NoteProperty -name revision-image-auto-backup -Value ""
+    $InitRule | Add-Member -type NoteProperty -name tcp-halfclose-timer -Value ""
+    $InitRule | Add-Member -type NoteProperty -name tcp-halfopen-time -Value ""
+    $InitRule | Add-Member -type NoteProperty -name timezone -Value ""
+    $InitRule | Add-Member -type NoteProperty -name udp-idle-timer -Value ""
+    return $InitRule
+}
 Function InitSystemDHCP {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
@@ -249,13 +265,24 @@ Function InitSystemDHCP {
 }
 Function InitSystemHA {
     $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Group-id -Value ""
     $InitRule | Add-Member -type NoteProperty -name Group-Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name mode -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Password -Value ""
     $InitRule | Add-Member -type NoteProperty -name hbdev -Value ""
+    $InitRule | Add-Member -type NoteProperty -name session-sync-dev -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ha-mgmt-status -Value ""
     $InitRule | Add-Member -type NoteProperty -name override -Value ""
     $InitRule | Add-Member -type NoteProperty -name priority -Value ""
     $InitRule | Add-Member -type NoteProperty -name session-pickup -Value ""
     $InitRule | Add-Member -type NoteProperty -name monitor -Value ""
+    return $InitRule
+}
+Function InitSystemHAMGMTInterfaces {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name interface -Value ""    
+    $InitRule | Add-Member -type NoteProperty -name gateway -Value ""
     return $InitRule
 }
 Function InitSytemInterface {
@@ -414,13 +441,11 @@ Function CleanupLine ($LineToCleanUp) {
     }
     return $ReturnValue
 }
-
 Function GetNumber ($NumberString) {
     [int]$IntNum = [convert]::ToInt32($NumberString, 10)
 
     return $IntNum
 }
-
 Function GetSubnetCIDR ([string]$Subnet,[IPAddress]$SubnetMask) {
     $binaryOctets = $SubnetMask.GetAddressBytes() | ForEach-Object { [Convert]::ToString($_, 2) }
     $SubnetCIDR = $Subnet + "/" + ($binaryOctets -join '').Trim('0').Length
@@ -512,6 +537,23 @@ Function CreateExcelSheetDHCP {
     }     
     $UsedRange = $Sheet.usedRange                  
     $UsedRange.EntireColumn.AutoFit() | Out-Null    
+}
+Function CreateExcelSheetHA {
+    $row = 1
+    $Sheet = $workbook.Worksheets.Add()
+    $SheetName = "HA$VdomName"
+    $Sheet.Name = $SheetName
+    $Column = 1   
+    $row = CreateExcelTabel $Sheet $rule
+    if ($HAMGMTInterfaceArray) {
+        $Column=1
+        $excel.cells.item($row,$Column) = "HA management interface(s)" 
+        ChangeFontExcelCell $Sheet $row $Column
+        $Row++      
+        $row = CreateExcelTabel $Sheet $HAMGMTInterfaceArray 
+    }      
+    $UsedRange = $Sheet.usedRange                  
+    $UsedRange.EntireColumn.AutoFit() | Out-Null      
 }
 Function CreateExcelSheetVirtualWanLink {
     $row = 1
@@ -656,7 +698,37 @@ if (!( Test-Path "$fortigateConfig" )) {
     exit 1
    }
 
-#$StopWatch = [system.diagnostics.stopwatch]::StartNew()
+Function UpdateFirstSheet ( $ActiveArray ) {
+    $FirstSheet.Cells.Item(2,1) = 'Excel Creation Date'
+    $FirstSheet.Cells.Item(2,2) = $Date
+    $FirstSheet.Cells.Item(2,2).numberformat = "00"
+    $FirstSheet.Cells.Item(3,1) = 'Config Creation Date'
+    $FirstSheet.Cells.Item(3,2) = $ConfigDate 
+    $FirstSheet.Cells.Item(3,2).numberformat = "00"                       
+    $FirstSheet.Cells.Item(4,1) = 'Type'
+    $FirstSheet.Cells.Item(4,2) = $FWType
+    $FirstSheet.Cells.Item(5,1) = 'Version'
+    $FirstSheet.Cells.Item(5,2) = $FWVersion  
+    $NoteProperties = $ActiveArray | get-member -Type NoteProperty
+    $Row = 6
+    $Column = 1
+    foreach ($Noteproperty in $NoteProperties) {
+        $excel.cells.item($row,$Column) = $Noteproperty.Name
+        $Row++
+    }
+    $Row = 6
+    $Column = 2
+    foreach ($ActiveMember in $ActiveArray) {
+        foreach ($Noteproperty in $NoteProperties) {
+            $PropertyString = [string]$NoteProperty.Name
+            $Value = $ActiveMember.$PropertyString
+            $excel.cells.item($row,$Column) = $Value
+            $Row++
+        }                        
+    }                         
+}
+
+#Start MAIN Script
 $startTime = get-date 
 Clear-Host
 Write-Output "Started script"
@@ -669,15 +741,12 @@ DO {
 $loadedConfig = Get-Content $fortigateConfig
 $Counter=0
 #default values these are getting over written when they are changed
-$AdminSport = "443"
+#
 #End default values
 $MaxCounter=$loadedConfig.count
-$ruleList = @()
 $date = Get-Date -Format yyyyMMddHHmm
-#$workingFolder = Split-Path $fortigateConfig;
-#$fileName = Split-Path $fortigateConfig -Leaf;
 $WorkingFolder = (Get-Item $fortigateConfig).DirectoryName
-$fileName = (Get-Item $fortigateConfig).Basename
+$FileName = (Get-Item $fortigateConfig).Basename
 $configdateArray=$Filename.Split("_")
 $configdate = $configdateArray[$configdateArray.Count-2] + $configdateArray[$configdateArray.Count-1]
 $ExcelFullFilePad = "$workingFolder\$fileName"
@@ -706,7 +775,8 @@ $FirewallTypeArray = $FWTypeVersion.Split("=")
 $FWVersion = $FirewallInfoArray[2]
 $FWType = $FirewallTypeArray[1]
 $SUBSection = $False
-#Creating empty Arrays and setting default values
+#Creating empty Arrays
+$ruleList = @()
 $DHCPRangeArray = @()
 $DHCPOptionsArray = @()
 $DHCPReservedAddressArray = @()
@@ -719,7 +789,7 @@ $RouterInterfaceArray = @()
 $RouterNetworkArray = @()
 $RouterDistibuteListArray = @()
 $RouterNeighborArray = @()
-$AdminCert = "Selfsigned"
+$HAMGMTInterfaceArray = @()
 foreach ($Line in $loadedConfig) {
     $Proc = $Counter/$MaxCounter*100
     $ProcString = $Proc.ToString("0.00")
@@ -742,7 +812,11 @@ foreach ($Line in $loadedConfig) {
                 "distribute-list" {
                     $SUBSection = $True
                     $SUBSectionConfig = "Routerdistributelist"                 
-                }                 
+                }    
+                "ha-mgmt-interfaces" {
+                    $SUBSection = $true
+                    $SUBSectionConfig = "HA-MGMTInterfaces"
+                }             
                 "health-check" {
                     $SUBSection = $True
                     $SUBSectionConfig = "virtualwanlinkhealthcheck"                 
@@ -867,6 +941,7 @@ foreach ($Line in $loadedConfig) {
                         }
                         "global" {
                             $ConfigSection = "ConfigSystemGlobal"
+                            $rule = InitSystemGlobal
                             Write-Output "Config system global line found."
                         }
                         "ha" {
@@ -927,6 +1002,11 @@ foreach ($Line in $loadedConfig) {
                             $DHCPReservedAddress = InitDHCPReservedAddress
                             $IDNumber = GetNumber($Value)
                             $DHCPReservedAddress | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
+                        }
+                        "HA-MGMTInterfaces" {
+                            $HAMGMTInterface = InitSystemHAMGMTInterfaces
+                            $IDNumber = GetNumber($Value)
+                            $HAMGMTInterface | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
                         "ospfarea"  {
                             $OSPFRouterArea = $Value
@@ -1069,6 +1149,9 @@ foreach ($Line in $loadedConfig) {
                         "dhcpreservedaddress" {
                             $DHCPReservedAddress | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }  
+                        "HA-MGMTInterfaces" {
+                            $HAMGMTInterface | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                        }
                         "RouterDistributeList" {
                             $RouterDistibuteList | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
@@ -1153,25 +1236,25 @@ foreach ($Line in $loadedConfig) {
                             }                        
                             else { $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force }
                         }
-                        "ConfigSystemGlobal" {
-                            Switch ($ConfigLineArray[1]) {
-                                "admin-sport" {
-                                    $AdminSport = $Value 
-                                }
-                                "admintimeout" {
-                                    $AdminTimeout= $Value 
-                                }
-                                "hostname" {
-                                    $Hostname = $Value 
-                                }
-                                "timezone" {
-                                    $TimeZone = $Value 
-                                }
-                                "admin-server-cert" {
-                                    $AdminCert = $Value
-                                }
-                            }
-                        }
+                        #"ConfigSystemGlobal" {
+                        #    Switch ($ConfigLineArray[1]) {
+                        #        "admin-sport" {
+                        #            $AdminSport = $Value 
+                        #        }
+                        #        "admintimeout" {
+                        #            $AdminTimeout= $Value 
+                        #        }
+                        #        "hostname" {
+                        #            $Hostname = $Value 
+                        #        }
+                        #        "timezone" {
+                        #            $TimeZone = $Value 
+                        #        }
+                        #        "admin-server-cert" {
+                        #            $AdminCert = $Value
+                        #        }
+                        #    }
+                        #}
                         "ConfigSystemInterface" {
                             if ($ConfigLineArray[1] -eq "ip" ) {
                                 $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3] 
@@ -1223,6 +1306,9 @@ foreach ($Line in $loadedConfig) {
                         "dhcpreservedaddress" {
                             $DHCPReservedAddressArray += $DHCPReservedAddress
                         } 
+                        "HA-MGMTInterfaces" {
+                            $HAMGMTInterfaceArray += $HAMGMTInterface
+                        }
                         "RouterDistibuteList" {
                             $RouterDistibuteListArray += $RouterDistibuteList
                         }
@@ -1334,31 +1420,33 @@ foreach ($Line in $loadedConfig) {
                             $RouterRedistibuteArray = @()  
                         }
                         "ConfigSystemGlobal" {
-                            $FirstSheet.Cells.Item(2,1) = 'Excel Creation Date'
-                            $FirstSheet.Cells.Item(2,2) = $Date
-                            $FirstSheet.Cells.Item(2,2).numberformat = "00"
-                            $FirstSheet.Cells.Item(3,1) = 'Config Creation Date'
-                            $FirstSheet.Cells.Item(3,2) = $ConfigDate 
-                            $FirstSheet.Cells.Item(3,2).numberformat = "00"                       
-                            $FirstSheet.Cells.Item(4,1) = 'Type'
-                            $FirstSheet.Cells.Item(4,2) = $FWType
-                            $FirstSheet.Cells.Item(5,1) = 'Version'
-                            $FirstSheet.Cells.Item(5,2) = $FWVersion                       
-                            $FirstSheet.Cells.Item(6,1) = 'ManagementPort'
-                            $FirstSheet.Cells.Item(6,2) = $AdminSport
-                            $FirstSheet.Cells.Item(7,1) = 'Certificate'
-                            $FirstSheet.Cells.Item(7,2) = $AdminCert
-                            $FirstSheet.Cells.Item(8,1) = 'TimeOut'
-                            $FirstSheet.Cells.Item(8,2) = $AdminTimeout
-                            $FirstSheet.Cells.Item(9,1) = 'Hostname'
-                            $FirstSheet.Cells.Item(9,2) = $Hostname
-                            $FirstSheet.Cells.Item(10,1) = 'TimeZone'
-                            $FirstSheet.Cells.Item(10,2) = $TimeZone
+                            #$FirstSheet.Cells.Item(2,1) = 'Excel Creation Date'
+                            #$FirstSheet.Cells.Item(2,2) = $Date
+                            #$FirstSheet.Cells.Item(2,2).numberformat = "00"
+                            #$FirstSheet.Cells.Item(3,1) = 'Config Creation Date'
+                            #$FirstSheet.Cells.Item(3,2) = $ConfigDate 
+                            #$FirstSheet.Cells.Item(3,2).numberformat = "00"                       
+                            #$FirstSheet.Cells.Item(4,1) = 'Type'
+                            #$FirstSheet.Cells.Item(4,2) = $FWType
+                            #$FirstSheet.Cells.Item(5,1) = 'Version'
+                            #$FirstSheet.Cells.Item(5,2) = $FWVersion                       
+                            #$FirstSheet.Cells.Item(6,1) = 'ManagementPort'
+                            #$FirstSheet.Cells.Item(6,2) = $AdminSport
+                            #$FirstSheet.Cells.Item(7,1) = 'Certificate'
+                            #$FirstSheet.Cells.Item(7,2) = $AdminCert
+                            #$FirstSheet.Cells.Item(8,1) = 'TimeOut'
+                            #$FirstSheet.Cells.Item(8,2) = $AdminTimeout
+                            #$FirstSheet.Cells.Item(9,1) = 'Hostname'
+                            #$FirstSheet.Cells.Item(9,2) = $Hostname
+                            #$FirstSheet.Cells.Item(10,1) = 'TimeZone'
+                            #$FirstSheet.Cells.Item(10,2) = $TimeZone
+                            UpdateFirstSheet $rule
                             $UsedRange = $FirstSheet.usedRange                  
                             $UsedRange.EntireColumn.AutoFit() | Out-Null
                         }
                         "ConfigSystemHA" {
-                            CreateExcelSheet "HA$VdomName" $rule   
+                            $HAMGMTInterfaceArray = $HAMGMTInterfaceArray | Sort-Object ID
+                            CreateExcelSheetHA   
                         }
                         "ConfigSystemInterface" {
                             $rulelist = $rulelist | Sort-Object Name
