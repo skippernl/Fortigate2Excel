@@ -141,20 +141,6 @@ Function InitFirewallVIP {
     $InitRule | Add-Member -type NoteProperty -name color -Value ""
     return $InitRule
 }
-Function InitRouterPolicy {
-    $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
-    $InitRule | Add-Member -type NoteProperty -name src -Value ""
-    #default route has no data in config setting dst route to 0.0.0.0/0 it gets overwritten if needed
-    $InitRule | Add-Member -type NoteProperty -name dst -Value "0.0.0.0/0"
-    $InitRule | Add-Member -type NoteProperty -name action -Value ""
-    $InitRule | Add-Member -type NoteProperty -name srcaddr -Value ""
-    $InitRule | Add-Member -type NoteProperty -name dstaddr -Value ""
-    $InitRule | Add-Member -type NoteProperty -name gateway -Value ""
-    $InitRule | Add-Member -type NoteProperty -name output-device -Value ""
-    $InitRule | Add-Member -type NoteProperty -name comments -Value ""
-    return $InitRule
-}
 Function InitRouterAccessList {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
@@ -170,18 +156,49 @@ Function InitRouterDistributeList {
     $InitRule | Add-Member -type NoteProperty -name "access-list" -Value ""   
     return $InitRule       
 }
+Function InitRouterNeighbor {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name IP -Value ""
+    $InitRule | Add-Member -type NoteProperty -name remote-as -Value ""  
+    $InitRule | Add-Member -type NoteProperty -name connect-timer -Value ""
+    $InitRule | Add-Member -type NoteProperty -name holdtime-timer -Value ""
+    $InitRule | Add-Member -type NoteProperty -name keepalive-timer -Value ""
+    $InitRule | Add-Member -type NoteProperty -name weight -Value ""       
+    return $InitRule     
+}
 Function InitRouterNetwork {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
-    $InitRule | Add-Member -type NoteProperty -name prefix -Value ""   
+    $InitRule | Add-Member -type NoteProperty -name prefix -Value "" 
     return $InitRule       
 }
-Function InitRouterRedistribute {
+Function InitRouterBGP {
     $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name Redistribute -Value ""
-    #Default is disabled
-    $InitRule | Add-Member -type NoteProperty -name status -Value "Disabled"   
-    return $InitRule       
+    $InitRule | Add-Member -type NoteProperty -name as -Value ""
+    $InitRule | Add-Member -type NoteProperty -name bestpath-med-missing-as-worst -Value ""
+    $InitRule | Add-Member -type NoteProperty -name fast-external-failover -Value ""
+    $InitRule | Add-Member -type NoteProperty -name graceful-restart -Value ""
+    $InitRule | Add-Member -type NoteProperty -name graceful-restart-time -Value ""
+    $InitRule | Add-Member -type NoteProperty -name graceful-stalepath-time -Value ""
+    $InitRule | Add-Member -type NoteProperty -name graceful-update-delay -Value ""
+    $InitRule | Add-Member -type NoteProperty -name holdtime-timer -Value ""
+    $InitRule | Add-Member -type NoteProperty -name keepalive-timer -Value ""
+    $InitRule | Add-Member -type NoteProperty -name log-neighbor-changes -Value ""
+    return $InitRule
+}
+Function InitRouterPolicy {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name src -Value ""
+    #default route has no data in config setting dst route to 0.0.0.0/0 it gets overwritten if needed
+    $InitRule | Add-Member -type NoteProperty -name dst -Value "0.0.0.0/0"
+    $InitRule | Add-Member -type NoteProperty -name action -Value ""
+    $InitRule | Add-Member -type NoteProperty -name srcaddr -Value ""
+    $InitRule | Add-Member -type NoteProperty -name dstaddr -Value ""
+    $InitRule | Add-Member -type NoteProperty -name gateway -Value ""
+    $InitRule | Add-Member -type NoteProperty -name output-device -Value ""
+    $InitRule | Add-Member -type NoteProperty -name comments -Value ""
+    return $InitRule
 }
 Function InitRouterOSPFInterface {
     $InitRule = New-Object System.Object;
@@ -191,6 +208,13 @@ Function InitRouterOSPFInterface {
     $InitRule | Add-Member -type NoteProperty -name hello-interval -Value ""
     $InitRule | Add-Member -type NoteProperty -name network-type -Value ""
     return $InitRule
+}
+Function InitRouterRedistribute {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Redistribute -Value ""
+    #Default is disabled
+    $InitRule | Add-Member -type NoteProperty -name status -Value "Disabled"   
+    return $InitRule       
 }
 Function InitRouterStatic {
     $InitRule = New-Object System.Object;
@@ -271,6 +295,8 @@ Function InitSystemLinkMonitor {
     $InitRule | Add-Member -type NoteProperty -name update-cascade-interface -Value ""
     $InitRule | Add-Member -type NoteProperty -name update-static-route -Value ""
     $InitRule | Add-Member -type NoteProperty -name status -Value ""
+    $InitRule | Add-Member -type NoteProperty -name srcintf -Value ""
+    $InitRule | Add-Member -type NoteProperty -name server -Value ""
     return $InitRule
 }
 Function InitSystemVirtualWanLink {
@@ -278,6 +304,12 @@ Function InitSystemVirtualWanLink {
     $InitRule | Add-Member -type NoteProperty -name status -Value ""
     $InitRule | Add-Member -type NoteProperty -name load-balance-mode -Value ""
     return $InitRule
+}
+Function InitSystemZone {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name interface -Value ""
+    return $InitRule    
 }
 Function InitVirtualWanLinkMember {
     $InitRule = New-Object System.Object;
@@ -383,6 +415,12 @@ Function CleanupLine ($LineToCleanUp) {
     return $ReturnValue
 }
 
+Function GetNumber ($NumberString) {
+    [int]$IntNum = [convert]::ToInt32($NumberString, 10)
+
+    return $IntNum
+}
+
 Function GetSubnetCIDR ([string]$Subnet,[IPAddress]$SubnetMask) {
     $binaryOctets = $SubnetMask.GetAddressBytes() | ForEach-Object { [Convert]::ToString($_, 2) }
     $SubnetCIDR = $Subnet + "/" + ($binaryOctets -join '').Trim('0').Length
@@ -407,30 +445,34 @@ Function ChangeFontExcelCell ($ChangeFontExcelCellSheet, $ChangeFontExcelCellRow
     $ChangeFontExcelCellSheet.Cells.Item($ChangeFontExcelCellRow, $ChangeFontExcelCellColumn).Font.ColorIndex = 55
     $ChangeFontExcelCellSheet.Cells.Item($ChangeFontExcelCellRow, $ChangeFontExcelCellColumn).Font.Color = 8210719
 }
+Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
+    $NoteProperties = $ActiveArray | get-member -Type NoteProperty
+    foreach ($Noteproperty in $NoteProperties) {
+        $excel.cells.item($row,$Column) = $Noteproperty.Name
+        $Column++
+    }
+    $Row++
+    foreach ($ActiveMember in $ActiveArray) {
+        $Column=1
+        foreach ($Noteproperty in $NoteProperties) {
+            $PropertyString = [string]$NoteProperty.Name
+            $Value = $ActiveMember.$PropertyString
+            $excel.cells.item($row,$Column) = $Value
+            $Column++
+        }                      
+        $row++
+    }    
+    Return $row
+}
 Function CreateExcelSheet ($SheetName, $SheetArray) {
     if ($SheetArray) {
         $row = 1
         $Sheet = $workbook.Worksheets.Add()
         $Sheet.Name = $SheetName
-        $Column=1
-        $NoteProperties = $SheetArray | get-member -Type NoteProperty
-        foreach ($Noteproperty in $NoteProperties) {
-            $excel.cells.item($row,$Column) = $Noteproperty.Name
-            $Column++
-        }
-        $Row++
-        foreach ($rule in $SheetArray) {
-            $Column=1
-            #$NoteProperties = $rulelist | get-member -Type NoteProperty
-            foreach ($Noteproperty in $NoteProperties) {
-                $PropertyString = [string]$NoteProperty.Name
-                $Value = $Rule.$PropertyString
-                $excel.cells.item($row,$Column) = $Value
-                $Column++
-            }                      
-            $row++
-        }    
-        #Use autoFit to expand the colums
+        $Column = 1
+        #Keeping Visual Studio happy
+        $excel.cells.item($row,$Column) = ""
+        $row = CreateExcelTabel $Sheet $SheetArray
         $UsedRange = $Sheet.usedRange                  
         $UsedRange.EntireColumn.AutoFit() | Out-Null
     }
@@ -444,90 +486,29 @@ Function CreateExcelSheetDHCP {
     $excel.cells.item($row,$Column) = "Normal DHCP options"
     ChangeFontExcelCell $Sheet $row $Column
     $row++
-    $NoteProperties = $rule | get-member -Type NoteProperty
-    foreach ($Noteproperty in $NoteProperties) {
-        $excel.cells.item($row,$Column) = $Noteproperty.Name
-        $Column++
-    }
-    $Column=1
-    $Row++
-    foreach ($Noteproperty in $NoteProperties) {
-        $PropertyString = [string]$NoteProperty.Name
-        $Value = $Rule.$PropertyString
-        $excel.cells.item($row,$Column) = $Value
-        $Column++
-    }    
-    #Normal DHCP options done  
+    $row = CreateExcelTabel $Sheet $rule
     if ($DHCPOptionsArray) {                
-        $row++   
         $Column=1
         $excel.cells.item($row,$Column) = "Extra DHCP options"
         ChangeFontExcelCell $Sheet $row $Column
-        $row++        
-        $NoteProperties = $DHCPOptionsArray | get-member -Type NoteProperty
-        foreach ($Noteproperty in $NoteProperties) {
-            $excel.cells.item($row,$Column) = $Noteproperty.Name
-            $Column++
-         }
-        $row++      
-        Foreach ($DHCPOptions in $DHCPOptionsArray) {
-            $Column=1 
-            foreach ($Noteproperty in $NoteProperties) {
-                $PropertyString = [string]$NoteProperty.Name
-                $Value = $DHCPOptions.$PropertyString
-                $excel.cells.item($row,$Column) = $Value
-                $Column++
-            }                      
-            $row++
-        }
+        $row++     
+        $row = CreateExcelTabel $Sheet $DHCPOptionsArray   
     }
     #Add IP ranges
-    $row++ 
     $Column=1
     $excel.cells.item($row,$Column) = "DHCP Range"
     ChangeFontExcelCell $Sheet $row $Column
     $row++
-    $NoteProperties = $DHCPRangeArray | get-member -Type NoteProperty  
-    foreach ($Noteproperty in $NoteProperties) {
-        $excel.cells.item($row,$Column) = $Noteproperty.Name
-        $Column++
-    }
-    $row++  
-    $DHCPRangeArray = $DHCPRangeArray | Sort-Object ID   
-    Foreach ($DHCPRange in $DHCPRangeArray) {
-        $Column=1 
-        foreach ($Noteproperty in $NoteProperties) {
-            $PropertyString = [string]$NoteProperty.Name
-            $Value = $DHCPRange.$PropertyString
-            $excel.cells.item($row,$Column) = $Value
-            $Column++
-        }                      
-        $row++
-    }    
-    #Add reserved address
+    $DHCPRangeArray = $DHCPRangeArray | Sort-Object ID 
+    $row = CreateExcelTabel $Sheet $DHCPRangeArray
     $row++ 
     $Column=1
     if ($DHCPReservedAddressArray) {
         $excel.cells.item($row,$Column) = "Reserved Addresses"
         ChangeFontExcelCell $Sheet $row $Column
-        $row++           
-        $NoteProperties = $DHCPReservedAddressArray | get-member -Type NoteProperty  
-        foreach ($Noteproperty in $NoteProperties) {
-            $excel.cells.item($row,$Column) = $Noteproperty.Name
-            $Column++
-        }
-        $row++   
-        $DHCPReservedAddressArray = $DHCPReservedAddressArray | Sort-Object ID    
-        Foreach ($DHCPReservedAddress in $DHCPReservedAddressArray) {
-            $Column=1
-            foreach ($Noteproperty in $NoteProperties) {
-                $PropertyString = [string]$NoteProperty.Name
-                $Value = $DHCPReservedAddress.$PropertyString
-                $excel.cells.item($row,$Column) = $Value
-                $Column++
-            }                      
-            $row++
-        }
+        $row++      
+        $DHCPReservedAddressArray = $DHCPReservedAddressArray | Sort-Object ID  
+        $row = CreateExcelTabel $Sheet $DHCPReservedAddressArray     
     }     
     $UsedRange = $Sheet.usedRange                  
     $UsedRange.EntireColumn.AutoFit() | Out-Null    
@@ -541,94 +522,65 @@ Function CreateExcelSheetVirtualWanLink {
     $excel.cells.item($row,$Column) = "Global Virtual Wan Link settings"
     ChangeFontExcelCell $Sheet $row $Column
     $row++
-    $NoteProperties = $rule | get-member -Type NoteProperty
-    foreach ($Noteproperty in $NoteProperties) {
-        $excel.cells.item($row,$Column) = $Noteproperty.Name
-        $Column++
-    }
-    $Column=1
-    $Row++
-    foreach ($Noteproperty in $NoteProperties) {
-        $PropertyString = [string]$NoteProperty.Name
-        $Value = $Rule.$PropertyString
-        $excel.cells.item($row,$Column) = $Value
-        $Column++
-    }
+    $row = CreateExcelTabel $Sheet $rule 
     if ($VirtualWanLinkMemberArray) {                
         $row++   
         $Column=1
         $excel.cells.item($row,$Column) = "Link WAN members"
         ChangeFontExcelCell $Sheet $row $Column
-        $row++        
-        $NoteProperties = $VirtualWanLinkMemberArray | get-member -Type NoteProperty
-        foreach ($Noteproperty in $NoteProperties) {
-            $excel.cells.item($row,$Column) = $Noteproperty.Name
-            $Column++
-         }
-        $row++      
-        Foreach ($VirtualWanLinkMember in $VirtualWanLinkMemberArray) {
-            $Column=1 
-            foreach ($Noteproperty in $NoteProperties) {
-                $PropertyString = [string]$NoteProperty.Name
-                $Value = $VirtualWanLinkMember.$PropertyString
-                $excel.cells.item($row,$Column) = $Value
-                $excel.cells.item($row,$Column).numberformat = "@"                 
-                $Column++
-            }                      
-            $row++
-        }
+        $row++    
+        $row = CreateExcelTabel $Sheet $VirtualWanLinkMemberArray  
     }  
     if ($VirtualWanLinkHealthCheckArray) {                
         $row++   
         $Column=1
         $excel.cells.item($row,$Column) = "Link WAN healtcheck"
         ChangeFontExcelCell $Sheet $row $Column
-        $row++        
-        $NoteProperties = $VirtualWanLinkHealthCheckArray | get-member -Type NoteProperty
-        foreach ($Noteproperty in $NoteProperties) {
-            $excel.cells.item($row,$Column) = $Noteproperty.Name
-            $Column++
-         }
-        $row++      
-        Foreach ($VirtualWanLinkHealthCheck in $VirtualWanLinkHealthCheckArray) {
-            $Column=1 
-            foreach ($Noteproperty in $NoteProperties) {
-                $PropertyString = [string]$NoteProperty.Name
-                $Value = $VirtualWanLinkHealthCheck.$PropertyString
-                $excel.cells.item($row,$Column) = $Value
-                $excel.cells.item($row,$Column).numberformat = "@"                
-                $Column++
-            }                      
-            $row++
-        }
+        $row++
+        $row = CreateExcelTabel $Sheet $VirtualWanLinkHealthCheckArray        
     }   
     if ($VirtualWanLinkServiceArray) {                
         $row++   
         $Column=1
         $excel.cells.item($row,$Column) = "Link WAN service"
         ChangeFontExcelCell $Sheet $row $Column
-        $row++        
-        $NoteProperties = $VirtualWanLinkServiceArray | get-member -Type NoteProperty
-        foreach ($Noteproperty in $NoteProperties) {
-            $excel.cells.item($row,$Column) = $Noteproperty.Name
-            $Column++
-         }
-        $row++      
-        Foreach ($VirtualWanLinkService in $VirtualWanLinkServiceArray) {
-            $Column=1 
-            foreach ($Noteproperty in $NoteProperties) {
-                $PropertyString = [string]$NoteProperty.Name
-                $Value = $VirtualWanLinkService.$PropertyString
-                $excel.cells.item($row,$Column) = $Value
-                $Column++
-            }                      
-            $row++
-        }
+        $row++
+        $row = CreateExcelTabel $Sheet $VirtualWanLinkServiceArray        
     }      
     $UsedRange = $Sheet.usedRange                  
     $UsedRange.EntireColumn.AutoFit() | Out-Null                  
 }
-
+Function CreateExcelSheetBGP {
+    $row = 1
+    $Sheet = $workbook.Worksheets.Add()
+    $SheetName = "Router-$RouterSection$VdomName"
+    $Sheet.Name = $SheetName
+    $Column = 1   
+    $row = CreateExcelTabel $Sheet $rule
+    if ($RouterNeighborArray) {
+        $Column=1
+        $excel.cells.item($row,$Column) = "BGP Neighbors" 
+        ChangeFontExcelCell $Sheet $row $Column
+        $Row++      
+        $row = CreateExcelTabel $Sheet $RouterNeighborArray 
+    }
+    if ($RouterRedistibuteArray) {
+        $Column=1
+        $excel.cells.item($row,$Column) = "Redistribute routes"
+        ChangeFontExcelCell $Sheet $row $Column
+        #Make the default that no routes are redistibuted. If there are redistubuted routes this field wil get overwritten.
+        $excel.cells.item($row,$Column+1) = "none"   
+        Foreach ($ArrayMember in $RouterRedistibuteArray) {
+            if ($ArrayMember.status -eq "enable") {
+                $Column++
+                $excel.cells.item($row,$Column) = $ArrayMember.Redistribute
+            }                        
+        }
+        $Row++ 
+    }       
+    $UsedRange = $Sheet.usedRange                  
+    $UsedRange.EntireColumn.AutoFit() | Out-Null      
+}
 Function CreateExcelSheetOSPF {
     $row = 1
     $Sheet = $workbook.Worksheets.Add()
@@ -640,7 +592,7 @@ Function CreateExcelSheetOSPF {
     $Column++
     $excel.cells.item($row,$Column) = $OSPFRouterID
     $row++
-    $Column=1 
+    $Column = 1 
     $excel.cells.item($row,$Column) = "OSPF Area"
     ChangeFontExcelCell $Sheet $row $Column
     $Column++
@@ -650,51 +602,30 @@ Function CreateExcelSheetOSPF {
         $Column=1
         $excel.cells.item($row,$Column) = "OSPF Networks"
         ChangeFontExcelCell $Sheet $row $Column 
-        $Row++       
-        $NoteProperties = $RouterNetworkArray | get-member -Type NoteProperty
-        foreach ($Noteproperty in $NoteProperties) {
-            $excel.cells.item($row,$Column) = $Noteproperty.Name
-            $Column++
-         }
-        $row++      
-        Foreach ($ArrayMember in $RouterNetworkArray) {
-            $Column=1 
-            foreach ($Noteproperty in $NoteProperties) {
-                $PropertyString = [string]$NoteProperty.Name
-                $Value = $ArrayMember.$PropertyString
-                $excel.cells.item($row,$Column) = $Value
-                $Column++
-            }                      
-            $row++   
-        }
+        $Row++      
+        $row = CreateExcelTabel $Sheet $RouterNetworkArray 
     }    
     if ($RouterInterfaceArray) {
         $Column=1
         $excel.cells.item($row,$Column) = "OSPF Interfaces"
         ChangeFontExcelCell $Sheet $row $Column 
         $Row++      
-        $NoteProperties = $RouterInterfaceArray | get-member -Type NoteProperty
-        foreach ($Noteproperty in $NoteProperties) {
-            $excel.cells.item($row,$Column) = $Noteproperty.Name
-            $Column++
-         }
-        $row++      
-        Foreach ($ArrayMember in $RouterInterfaceArray) {
-            $Column=1 
-            foreach ($Noteproperty in $NoteProperties) {
-                $PropertyString = [string]$NoteProperty.Name
-                $Value = $ArrayMember.$PropertyString
-                $excel.cells.item($row,$Column) = $Value
-                $Column++
-            }                      
-            $row++   
-        }
+        $row = CreateExcelTabel $Sheet $RouterInterfaceArray
     } 
     $Column=1
     $excel.cells.item($row,$Column) = "OSPF Passive Interfaces"
     ChangeFontExcelCell $Sheet $row $Column 
     $Column++
-    $excel.cells.item($row,$Column) = $OSPFPassiveInterface 
+    if ($OSPFPassiveInterface) {
+        $OSPFPassiveInterfaceArray = $OSPFPassiveInterface.Split(",")
+        if ($OSPFPassiveInterfaceArray) {
+            foreach ($Member in $OSPFPassiveInterfaceArray) {
+                $excel.cells.item($row,$Column) = $Member
+                $Column++
+            }
+        }
+    } 
+    else { $excel.cells.item($row,$Column) = "none"  } 
     $Row++  
     if ($RouterRedistibuteArray) {
         $Column=1
@@ -715,22 +646,7 @@ Function CreateExcelSheetOSPF {
         $excel.cells.item($row,$Column) = "OSPF Distributelist"
         ChangeFontExcelCell $Sheet $row $Column   
         $Row++     
-        $NoteProperties = $RouterDistibuteListArray| get-member -Type NoteProperty
-        foreach ($Noteproperty in $NoteProperties) {
-            $excel.cells.item($row,$Column) = $Noteproperty.Name
-            $Column++
-         }
-        $row++      
-        Foreach ($ArrayMember in $RouterDistibuteListArray) {
-            $Column=1 
-            foreach ($Noteproperty in $NoteProperties) {
-                $PropertyString = [string]$NoteProperty.Name
-                $Value = $ArrayMember.$PropertyString
-                $excel.cells.item($row,$Column) = $Value
-                $Column++
-            }                      
-            $row++   
-        }
+        $row = CreateExcelTabel $Sheet $RouterDistibuteListArray
     }     
     $UsedRange = $Sheet.usedRange                  
     $UsedRange.EntireColumn.AutoFit() | Out-Null      
@@ -749,7 +665,7 @@ $I=0
 DO {
     Write-output ""
     $I++
-} While ($i -le 4)
+} While ($i -le 5)
 $loadedConfig = Get-Content $fortigateConfig
 $Counter=0
 #default values these are getting over written when they are changed
@@ -758,8 +674,9 @@ $AdminSport = "443"
 $MaxCounter=$loadedConfig.count
 $ruleList = @()
 $date = Get-Date -Format yyyyMMddHHmm
-$workingFolder = Split-Path $fortigateConfig;
-$fileName = Split-Path $fortigateConfig -Leaf;
+#$workingFolder = Split-Path $fortigateConfig;
+#$fileName = Split-Path $fortigateConfig -Leaf;
+$WorkingFolder = (Get-Item $fortigateConfig).DirectoryName
 $fileName = (Get-Item $fortigateConfig).Basename
 $configdateArray=$Filename.Split("_")
 $configdate = $configdateArray[$configdateArray.Count-2] + $configdateArray[$configdateArray.Count-1]
@@ -768,10 +685,17 @@ $Excel = New-Object -ComObject Excel.Application
 $Excel.Visible = $false
 $workbook = $excel.Workbooks.Add()
 $FirstSheet = $workbook.Worksheets.Item(1) 
-$FirstSheet.Name = $FileName
+if ($Filename.Length -gt 31) {
+    Write-output "Sheetname cannot be longer that 31 caracters shorting name to fit."
+    $SheetName = $FileName.Substring(0,31)
+}
+else {
+    $Sheetname = $FileName
+}
+$FirstSheet.Name = $SheetName
 $FirstSheet.Cells.Item(1,1)= 'Fortigate Configuration'
 $MergeCells = $FirstSheet.Range("A1:G1")
-$MergeCells.Select()
+$MergeCells.Select() | out-null
 $MergeCells.MergeCells = $true
 ChangeFontExcelCell $FirstSheet 1 1
 $FirstLine = $loadedConfig[0]
@@ -782,6 +706,7 @@ $FirewallTypeArray = $FWTypeVersion.Split("=")
 $FWVersion = $FirewallInfoArray[2]
 $FWType = $FirewallTypeArray[1]
 $SUBSection = $False
+#Creating empty Arrays and setting default values
 $DHCPRangeArray = @()
 $DHCPOptionsArray = @()
 $DHCPReservedAddressArray = @()
@@ -793,14 +718,17 @@ $RouterRedistibuteArray = @()
 $RouterInterfaceArray = @()
 $RouterNetworkArray = @()
 $RouterDistibuteListArray = @()
+$RouterNeighborArray = @()
+$AdminCert = "Selfsigned"
 foreach ($Line in $loadedConfig) {
     $Proc = $Counter/$MaxCounter*100
+    $ProcString = $Proc.ToString("0.00")
     $elapsedTime = $(get-date) - $startTime 
     if ($Counter -eq 0) { $estimatedTotalSeconds = $MaxCounter/ 1 * $elapsedTime.TotalSecond }
     else { $estimatedTotalSeconds = $MaxCounter/ $counter * $elapsedTime.TotalSeconds }
     $estimatedTotalSecondsTS = New-TimeSpan -seconds $estimatedTotalSeconds
     $estimatedCompletionTime = $startTime + $estimatedTotalSecondsTS    
-    Write-Progress -Activity "Parsing config file. Estimate completion time $estimatedCompletionTime" -PercentComplete ($Proc)
+    Write-Progress -Activity "Parsing config file ($ProcString%). Estimate completion time $estimatedCompletionTime" -PercentComplete ($Proc)
     $Counter++
     $Configline=$Line.Trim() -replace '\s+',' '
     $ConfigLineArray = $Configline.Split(" ")    
@@ -826,7 +754,11 @@ foreach ($Line in $loadedConfig) {
                 "members" {
                     $SUBSection = $True
                     $SUBSectionConfig = "virtualwanlinkmember"                     
-                }   
+                }  
+                "neighbor" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "RouterNeighbor"                     
+                }
                 "network" {
                     $SUBSection = $True
                     $SUBSectionConfig = "RouterNetwork"                       
@@ -899,10 +831,17 @@ foreach ($Line in $loadedConfig) {
                     }
                 }  
                 "router" {
+                    $RouterSection = $ConfigLineArray[2]
                     switch($ConfigLineArray[2]) {
                         "Access-list" {
                             $ConfigSection = "ConfigRouterAccessList"
                             Write-Output "Config router access-list line found."                            
+                        }
+                        "bgp" {
+                            $ConfigSection = "ConfigRouterBGP"
+                            Write-Output "Config router bgp line found." 
+                            $rule = InitRouterBGP   
+                            $RouterNeighborOLD = InitRouterNeighbor                     
                         }
                         "static" {
                             $ConfigSection = "ConfigRouterStatic"
@@ -942,12 +881,15 @@ foreach ($Line in $loadedConfig) {
                         "link-monitor" {
                             $ConfigSection = "ConfigSystemLinkmonitor"
                             Write-Output "Config system link-monitor line found."
-                            $rule = InitSystemLinkMonitor
                         }
                         "virtual-wan-link" {
                             $ConfigSection = "ConfigSystemVirtualWanLink"
                             Write-Output "Config system virtual-wan-link line found."                            
                             $rule = InitSystemVirtualWanLink
+                        }
+                        "zone" {
+                            $ConfigSection = "ConfigSystemZone"
+                            Write-Output "Config system zone line found." 
                         }
                     } 
                 }          
@@ -973,26 +915,35 @@ foreach ($Line in $loadedConfig) {
                     Switch ($SUBSectionConfig) {
                         "dhcpiprange" {
                             $DHCPRange = InitDHCPRange
-                            $DHCPRange | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force
+                            $IDNumber = GetNumber($Value)
+                            $DHCPRange | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
                         "dhcpoptions" {
                             $DHCPOptions = InitDHCPOptions
-                            $DHCPOptions | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force
+                            $IDNumber = GetNumber($Value)
+                            $DHCPOptions | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
                         "dhcpreservedaddress" {
                             $DHCPReservedAddress = InitDHCPReservedAddress
-                            $DHCPReservedAddress | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force
+                            $IDNumber = GetNumber($Value)
+                            $DHCPReservedAddress | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
                         "ospfarea"  {
                             $OSPFRouterArea = $Value
                         }
                         "RouterDistributeList" {
                             $RouterDistibuteList = InitRouterDistributeList
-                            $RouterDistibuteList  | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force
+                            $IDNumber = GetNumber($Value)
+                            $RouterDistibuteList  | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
+                        }
+                        "RouterNeighbor" {
+                            $RouterNeighbor = InitRouterNeighbor
+                            $RouterNeighbor | Add-Member -MemberType NoteProperty -Name IP -Value $Value -force
                         }
                         "RouterNetwork" {
                             $RouterNetwork = InitRouterNetwork
-                            $RouterNetwork | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force
+                            $IDNumber = GetNumber($Value)
+                            $RouterNetwork | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
                         "ospfinterface" {
                             $OSPFInterface = InitRouterOSPFInterface
@@ -1001,7 +952,8 @@ foreach ($Line in $loadedConfig) {
                         "RouterAccessListRule" {
                             $RouterAccessList = InitRouterAccessList
                             $RouterAccessList | Add-Member -MemberType NoteProperty -Name "Name" -Value $RouterAccessListName -force
-                            $RouterAccessList | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force
+                            $IDNumber = GetNumber($Value)
+                            $RouterAccessList | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
                         "virtualwanlinkhealthcheck" {
                             $VirtualWanLinkHealthCheck = InitVirtualWanLinkHealthCheck
@@ -1009,11 +961,13 @@ foreach ($Line in $loadedConfig) {
                         }                        
                         "virtualwanlinkmember" {
                             $VirtualWanLinkMember = InitVirtualWanLinkMember
-                            $VirtualWanLinkMember | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force
+                            $IDNumber = GetNumber($Value)
+                            $VirtualWanLinkMember | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
                         "virtualwanlinkservice"{
                             $VirtualWanLinkService = InitVirtualWanLinkService
-                            $VirtualWanLinkService | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force                            
+                            $IDNumber = GetNumber($Value)
+                            $VirtualWanLinkService | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force                            
                         }
                     }
                 }
@@ -1021,7 +975,8 @@ foreach ($Line in $loadedConfig) {
                     switch ($ConfigSection) {             
                         "ConfigSystemDHCP" {
                             $rule = InitSystemDHCP
-                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force
+                            $IDNumber = GetNumber($Value)
+                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber  -force
                         }                          
                         "ConfigVDOM" {
                             #look for vdom name 
@@ -1036,7 +991,8 @@ foreach ($Line in $loadedConfig) {
                         }
                         "ConfigFirewallPolicy" {
                             $rule = InitFirewallRule
-                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force
+                            $IDNumber = GetNumber($Value)
+                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
                         "ConfigFirewallAddress" {
                             $rule = InitFirewallAddress
@@ -1051,15 +1007,25 @@ foreach ($Line in $loadedConfig) {
                         }
                         "ConfigRouterStatic" {
                             $rule = InitRouterStatic
-                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force
+                            $IDNumber = GetNumber($Value)
+                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
                         "ConfigRouterPolicy" {
                             $rule = InitRouterPolicy
-                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $Value -force
+                            $IDNumber = GetNumber($Value)
+                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
+                        }
+                        "ConfigSystemLinkmonitor" {
+                            $rule = InitSystemLinkMonitor
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
                         }
                         "ConfigSystemInterface" {
                             $rule = InitSytemInterface
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
+                        }
+                        "ConfigSystemZone" {
+                            $rule = InitSytemInterface
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force                            
                         }
                         "ConfigFirewallServiceCategory" {
                             $rule = InitFirewallServiceCategory
@@ -1104,7 +1070,10 @@ foreach ($Line in $loadedConfig) {
                             $DHCPReservedAddress | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }  
                         "RouterDistributeList" {
-                            $RouterDistibuteList  | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                            $RouterDistibuteList | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                        }
+                        "RouterNeighbor" {
+                            $RouterNeighbor | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
                         "RouterNetwork" {
                             $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3]
@@ -1257,6 +1226,13 @@ foreach ($Line in $loadedConfig) {
                         "RouterDistibuteList" {
                             $RouterDistibuteListArray += $RouterDistibuteList
                         }
+                        "RouterNeighbor" {
+                            #Check if the new value is not the same as the OLD (config has two concecutive next statements)
+                            if ($RouterNeighbor.IP -ne $RouterNeighborOLD.IP) {
+                                $RouterNeighborOLD = $RouterNeighbor
+                                $RouterNeighborArray += $RouterNeighbor
+                            }   
+                        }
                         "RouterNetwork" {
                             $RouterNetworkArray += $RouterNetwork
                         }
@@ -1340,6 +1316,9 @@ foreach ($Line in $loadedConfig) {
                                     $rulelist = $rulelist | Sort-Object ID
                                     CreateExcelSheet "Router-Static$VdomName" $rulelist 
                                 }
+                                "ConfigRouterBGP" {
+                                    CreateExcelSheetBGP                                    
+                                }
                                 "ConfigRouterOSPF" {
                                     CreateExcelSheetOSPF                               
                                 }
@@ -1390,6 +1369,10 @@ foreach ($Line in $loadedConfig) {
                         }
                         "ConfigSystemVirtualWanLink" {
                             CreateExcelSheetVirtualWanLink
+                        }
+                        "ConfigSystemZone" {
+                            $rulelist = $rulelist | Sort-Object Name
+                            CreateExcelSheet "Zone$VdomName" $rulelist 
                         }
                         "Configvpnipsecphase1" { 
                             $rulelist = $rulelist | Sort-Object Name
