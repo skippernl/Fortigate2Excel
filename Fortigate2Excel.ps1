@@ -481,7 +481,14 @@ Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
         $Column=1
         foreach ($Noteproperty in $NoteProperties) {
             $PropertyString = [string]$NoteProperty.Name
-            $Value = $ActiveMember.$PropertyString
+            if (($PropertyString -eq "timezone") -and $TimeZoneArray) {
+                $TimeZoneNumber = GetNumber $ActiveMember.$PropertyString
+                $Value = $TimeZoneArray[$TimeZoneNumber].TimeName
+                $Value
+            }
+            else {
+                $Value = $ActiveMember.$PropertyString
+            }            
             $excel.cells.item($row,$Column) = $Value
             $Column++
         }                      
@@ -693,11 +700,11 @@ Function CreateExcelSheetOSPF {
     $UsedRange = $Sheet.usedRange                  
     $UsedRange.EntireColumn.AutoFit() | Out-Null      
 }
-if (!( Test-Path "$fortigateConfig" )) {
-    Write-Output "[!] ERROR: Could not find FortiGate config file at $fortigateConfig."
-    exit 1
-   }
-
+Function Get-ScriptDirectory
+{
+  $Invocation = (Get-Variable MyInvocation -Scope 1).Value
+  Split-Path $Invocation.MyCommand.Path
+}
 Function UpdateFirstSheet ( $ActiveArray ) {
     $FirstSheet.Cells.Item(2,1) = 'Excel Creation Date'
     $FirstSheet.Cells.Item(2,2) = $Date
@@ -721,7 +728,13 @@ Function UpdateFirstSheet ( $ActiveArray ) {
     foreach ($ActiveMember in $ActiveArray) {
         foreach ($Noteproperty in $NoteProperties) {
             $PropertyString = [string]$NoteProperty.Name
-            $Value = $ActiveMember.$PropertyString
+            if (($PropertyString -eq "timezone") -and $TimeZoneArray) {
+                $TimeZoneNumber = GetNumber $ActiveMember.$PropertyString
+                $Value = $TimeZoneArray[$TimeZoneNumber].TimeName
+            }
+            else {
+                $Value = $ActiveMember.$PropertyString
+            }
             $excel.cells.item($row,$Column) = $Value
             $Row++
         }                        
@@ -729,6 +742,15 @@ Function UpdateFirstSheet ( $ActiveArray ) {
 }
 
 #Start MAIN Script
+if (!( Test-Path "$fortigateConfig" )) {
+    Write-Output "[!] ERROR: Could not find FortiGate config file at $fortigateConfig."
+    exit 1
+}
+$TimeZoneFilePath = Get-ScriptDirectory
+if (Test-Path "$TimeZoneFilePath\TimeZones.csv") {
+    $TimeZoneArray = Import-CSV "$TimeZoneFilePath\TimeZones.csv" -delimiter ";"
+}
+else { $TimeZoneArray = $null}
 $startTime = get-date 
 Clear-Host
 Write-Output "Started script"
