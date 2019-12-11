@@ -27,7 +27,6 @@ Function InitDHCPRange {
     $InitRule | Add-Member -type NoteProperty -name ID -Value "" 
     $InitRule | Add-Member -type NoteProperty -name "start-ip" -Value ""
     $InitRule | Add-Member -type NoteProperty -name "end-ip" -Value ""  
-    
     return $InitRule
 }
 Function InitDHCPOptions {
@@ -36,7 +35,6 @@ Function InitDHCPOptions {
     $InitRule | Add-Member -type NoteProperty -name code -Value "" 
     $InitRule | Add-Member -type NoteProperty -name type -Value ""
     $InitRule | Add-Member -type NoteProperty -name value -Value ""  
-    
     return $InitRule
 }
 Function InitDHCPReservedAddress {
@@ -44,8 +42,7 @@ Function InitDHCPReservedAddress {
     $InitRule | Add-Member -type NoteProperty -name ID -Value "" 
     $InitRule | Add-Member -type NoteProperty -name ip -Value "" 
     $InitRule | Add-Member -type NoteProperty -name mac -Value ""
-    $InitRule | Add-Member -type NoteProperty -name description -Value ""  
-    
+    $InitRule | Add-Member -type NoteProperty -name description -Value ""     
     return $InitRule
 }
 Function InitFirewallAddress {
@@ -109,12 +106,6 @@ Function InitFirewallServiceCategory {
     $InitRule | Add-Member -type NoteProperty -name comment -Value ""
     return $InitRule
 }
-Function InitFirewallServiceGroup {
-    $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
-    $InitRule | Add-Member -type NoteProperty -name Member -Value ""
-    return $InitRule
-}
 Function InitFirewallServiceCustom {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
@@ -126,6 +117,45 @@ Function InitFirewallServiceCustom {
     $InitRule | Add-Member -type NoteProperty -name protocol-number -Value ""
     $InitRule | Add-Member -type NoteProperty -name visibility -Value ""
     return $InitRule
+}
+Function InitFirewallServiceGroup {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Member -Value ""
+    return $InitRule
+}
+Function InitFirewallShaperPeripshaper {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name maximum-bandwith -Value ""
+    $InitRule | Add-Member -type NoteProperty -name max-concurrent-session -Value ""
+    $InitRule | Add-Member -type NoteProperty -name forward-DSCP -Value ""
+    $InitRule | Add-Member -type NoteProperty -name reverse-DSCP -Value ""
+    return $InitRule    
+}  
+Function InitFirewallShaperTrafficshaper {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name per-policy -Value ""
+    $InitRule | Add-Member -type NoteProperty -name maximum-bandwith -Value ""
+    $InitRule | Add-Member -type NoteProperty -name quaranteed-bandwidth -Value ""
+    $InitRule | Add-Member -type NoteProperty -name priority -Value ""
+    $InitRule | Add-Member -type NoteProperty -name DSCP -Value ""
+    return $InitRule    
+}    
+Function InitFirewallShapingPolicy {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name srcaddr -Value ""
+    $InitRule | Add-Member -type NoteProperty -name dsraddr  -Value ""
+    $InitRule | Add-Member -type NoteProperty -name service -Value ""
+    $InitRule | Add-Member -type NoteProperty -name app-category -Value ""
+    $InitRule | Add-Member -type NoteProperty -name url-category -Value ""
+    $InitRule | Add-Member -type NoteProperty -name dstintf -Value ""
+    $InitRule | Add-Member -type NoteProperty -name traffic-shaper -Value ""
+    $InitRule | Add-Member -type NoteProperty -name traffic-shaper-reverse -Value ""
+    $InitRule | Add-Member -type NoteProperty -name per-ip-shaper -Value ""
+    return $InitRule    
 }
 Function InitFirewallVIP {
     $InitRule = New-Object System.Object;
@@ -150,6 +180,20 @@ Function InitRouterAccessList {
     $InitRule | Add-Member -type NoteProperty -name action -Value "allow"
     return $InitRule    
 }
+Function InitRouterBGP {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name as -Value ""
+    $InitRule | Add-Member -type NoteProperty -name bestpath-med-missing-as-worst -Value ""
+    $InitRule | Add-Member -type NoteProperty -name fast-external-failover -Value ""
+    $InitRule | Add-Member -type NoteProperty -name graceful-restart -Value ""
+    $InitRule | Add-Member -type NoteProperty -name graceful-restart-time -Value ""
+    $InitRule | Add-Member -type NoteProperty -name graceful-stalepath-time -Value ""
+    $InitRule | Add-Member -type NoteProperty -name graceful-update-delay -Value ""
+    $InitRule | Add-Member -type NoteProperty -name holdtime-timer -Value ""
+    $InitRule | Add-Member -type NoteProperty -name keepalive-timer -Value ""
+    $InitRule | Add-Member -type NoteProperty -name log-neighbor-changes -Value ""
+    return $InitRule
+}
 Function InitRouterDistributeList {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
@@ -171,20 +215,6 @@ Function InitRouterNetwork {
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
     $InitRule | Add-Member -type NoteProperty -name prefix -Value "" 
     return $InitRule       
-}
-Function InitRouterBGP {
-    $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name as -Value ""
-    $InitRule | Add-Member -type NoteProperty -name bestpath-med-missing-as-worst -Value ""
-    $InitRule | Add-Member -type NoteProperty -name fast-external-failover -Value ""
-    $InitRule | Add-Member -type NoteProperty -name graceful-restart -Value ""
-    $InitRule | Add-Member -type NoteProperty -name graceful-restart-time -Value ""
-    $InitRule | Add-Member -type NoteProperty -name graceful-stalepath-time -Value ""
-    $InitRule | Add-Member -type NoteProperty -name graceful-update-delay -Value ""
-    $InitRule | Add-Member -type NoteProperty -name holdtime-timer -Value ""
-    $InitRule | Add-Member -type NoteProperty -name keepalive-timer -Value ""
-    $InitRule | Add-Member -type NoteProperty -name log-neighbor-changes -Value ""
-    return $InitRule
 }
 Function InitRouterPolicy {
     $InitRule = New-Object System.Object;
@@ -231,22 +261,6 @@ Function InitRouterStatic {
     $InitRule | Add-Member -type NoteProperty -name virtual-wan-link -Value ""
     return $InitRule
 }
-Function InitSystemGlobal {
-    $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name admin-sport -Value "443"
-    $InitRule | Add-Member -type NoteProperty -name admin-Cert -Value "Selfsigned"
-    $InitRule | Add-Member -type NoteProperty -name admintimeout -Value ""
-    $InitRule | Add-Member -type NoteProperty -name alias -Value "    "
-    $InitRule | Add-Member -type NoteProperty -name disk-usage -Value ""
-    $InitRule | Add-Member -type NoteProperty -name hostname -Value ""
-    $InitRule | Add-Member -type NoteProperty -name revision-backup-on-logout -Value ""
-    $InitRule | Add-Member -type NoteProperty -name revision-image-auto-backup -Value ""
-    $InitRule | Add-Member -type NoteProperty -name tcp-halfclose-timer -Value ""
-    $InitRule | Add-Member -type NoteProperty -name tcp-halfopen-time -Value ""
-    $InitRule | Add-Member -type NoteProperty -name timezone -Value ""
-    $InitRule | Add-Member -type NoteProperty -name udp-idle-timer -Value ""
-    return $InitRule
-}
 Function InitSystemDHCP {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
@@ -261,6 +275,23 @@ Function InitSystemDHCP {
     $InitRule | Add-Member -type NoteProperty -name "dns-server2" -Value ""
     $InitRule | Add-Member -type NoteProperty -name "ntp-server1" -Value ""
 
+    return $InitRule
+}
+Function InitSystemGlobal {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name admin-sport -Value "443"
+    $InitRule | Add-Member -type NoteProperty -name admin-Cert -Value "Selfsigned"
+    $InitRule | Add-Member -type NoteProperty -name admintimeout -Value ""
+    $InitRule | Add-Member -type NoteProperty -name alias -Value "    "
+    $InitRule | Add-Member -type NoteProperty -name disk-usage -Value ""
+    $InitRule | Add-Member -type NoteProperty -name hostname -Value ""
+    $InitRule | Add-Member -type NoteProperty -name remoteauthtimeout -Value ""
+    $InitRule | Add-Member -type NoteProperty -name revision-backup-on-logout -Value ""
+    $InitRule | Add-Member -type NoteProperty -name revision-image-auto-backup -Value ""
+    $InitRule | Add-Member -type NoteProperty -name tcp-halfclose-timer -Value ""
+    $InitRule | Add-Member -type NoteProperty -name tcp-halfopen-time -Value ""
+    $InitRule | Add-Member -type NoteProperty -name timezone -Value ""
+    $InitRule | Add-Member -type NoteProperty -name udp-idle-timer -Value ""
     return $InitRule
 }
 Function InitSystemHA {
@@ -338,19 +369,19 @@ Function InitSystemZone {
     $InitRule | Add-Member -type NoteProperty -name interface -Value ""
     return $InitRule    
 }
-Function InitVirtualWanLinkMember {
-    $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name ID -Value ""    
-    $InitRule | Add-Member -type NoteProperty -name interface -Value ""
-    $InitRule | Add-Member -type NoteProperty -name weight -Value ""
-    return $InitRule   
-}
 Function InitVirtualWanLinkHealthCheck {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""    
     $InitRule | Add-Member -type NoteProperty -name server -Value ""
     $InitRule | Add-Member -type NoteProperty -name members -Value ""
     return $InitRule  
+}
+Function InitVirtualWanLinkMember {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value ""    
+    $InitRule | Add-Member -type NoteProperty -name interface -Value ""
+    $InitRule | Add-Member -type NoteProperty -name weight -Value ""
+    return $InitRule   
 }
 Function InitVirtualWanLinkService {
     $InitRule = New-Object System.Object;
@@ -361,7 +392,7 @@ Function InitVirtualWanLinkService {
     $InitRule | Add-Member -type NoteProperty -name src -Value ""
     return $InitRule  
 }
-Function Initvpnipsecphase1 {
+Function InitVpnipsecphase1 {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name type -Value ""
@@ -386,7 +417,7 @@ Function Initvpnipsecphase1 {
     #psksecret not in export
     return $InitRule
 }
-Function Initvpnipsecphase2 {
+Function InitVpnipsecphase2 {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name phase1name -Value ""
@@ -441,25 +472,6 @@ Function CleanupLine ($LineToCleanUp) {
     }
     return $ReturnValue
 }
-Function GetNumber ($NumberString) {
-    [int]$IntNum = [convert]::ToInt32($NumberString, 10)
-
-    return $IntNum
-}
-Function GetSubnetCIDR ([string]$Subnet,[IPAddress]$SubnetMask) {
-    $binaryOctets = $SubnetMask.GetAddressBytes() | ForEach-Object { [Convert]::ToString($_, 2) }
-    $SubnetCIDR = $Subnet + "/" + ($binaryOctets -join '').Trim('0').Length
-    return $SubnetCIDR
-}
-Function GetSubnetCIDRPolicy ($SubnetCIDRPolicy) {
-    $SubnetCIDRPolicyArray =  $SubnetCIDRPolicy.Split("/")
-    #Drop the first " from the policy line subnet    
-    $SubnetCIDRPolicyArray[0] = $SubnetCIDRPolicyArray[0].Substring(1)
-    #Drop the last " from the policy line subnet
-    $SubnetCIDRPolicyArray[1] = $SubnetCIDRPolicyArray[1].Substring(0,$SubnetCIDRPolicyArray[1].Length-1)
-    $ReturnGetSubnetCIDRPolicy = GetSubnetCIDR $SubnetCIDRPolicyArray[0] $SubnetCIDRPolicyArray[1]
-    return $ReturnGetSubnetCIDRPolicy
-}
 Function ChangeFontExcelCell ($ChangeFontExcelCellSheet, $ChangeFontExcelCellRow, $ChangeFontExcelCellColumn) {
     $ChangeFontExcelCellSheet.Cells.Item($ChangeFontExcelCellRow, $ChangeFontExcelCellColumn).HorizontalAlignment = -4108
     $ChangeFontExcelCellSheet.Cells.Item($ChangeFontExcelCellRow, $ChangeFontExcelCellColumn).Font.Size = 18
@@ -481,14 +493,7 @@ Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
         $Column=1
         foreach ($Noteproperty in $NoteProperties) {
             $PropertyString = [string]$NoteProperty.Name
-            if (($PropertyString -eq "timezone") -and $TimeZoneArray) {
-                $TimeZoneNumber = GetNumber $ActiveMember.$PropertyString
-                $Value = $TimeZoneArray[$TimeZoneNumber].TimeName
-                $Value
-            }
-            else {
-                $Value = $ActiveMember.$PropertyString
-            }            
+                $Value = $ActiveMember.$PropertyString         
             $excel.cells.item($row,$Column) = $Value
             $Column++
         }                      
@@ -700,10 +705,28 @@ Function CreateExcelSheetOSPF {
     $UsedRange = $Sheet.usedRange                  
     $UsedRange.EntireColumn.AutoFit() | Out-Null      
 }
+Function GetNumber ($NumberString) {
+    [int]$IntNum = [convert]::ToInt32($NumberString, 10)
+    return $IntNum
+}
 Function Get-ScriptDirectory
 {
   $Invocation = (Get-Variable MyInvocation -Scope 1).Value
   Split-Path $Invocation.MyCommand.Path
+}
+Function GetSubnetCIDR ([string]$Subnet,[IPAddress]$SubnetMask) {
+    $binaryOctets = $SubnetMask.GetAddressBytes() | ForEach-Object { [Convert]::ToString($_, 2) }
+    $SubnetCIDR = $Subnet + "/" + ($binaryOctets -join '').Trim('0').Length
+    return $SubnetCIDR
+}
+Function GetSubnetCIDRPolicy ($SubnetCIDRPolicy) {
+    $SubnetCIDRPolicyArray =  $SubnetCIDRPolicy.Split("/")
+    #Drop the first " from the policy line subnet    
+    $SubnetCIDRPolicyArray[0] = $SubnetCIDRPolicyArray[0].Substring(1)
+    #Drop the last " from the policy line subnet
+    $SubnetCIDRPolicyArray[1] = $SubnetCIDRPolicyArray[1].Substring(0,$SubnetCIDRPolicyArray[1].Length-1)
+    $ReturnGetSubnetCIDRPolicy = GetSubnetCIDR $SubnetCIDRPolicyArray[0] $SubnetCIDRPolicyArray[1]
+    return $ReturnGetSubnetCIDRPolicy
 }
 Function UpdateFirstSheet ( $ActiveArray ) {
     $FirstSheet.Cells.Item(2,1) = 'Excel Creation Date'
@@ -920,6 +943,22 @@ foreach ($Line in $loadedConfig) {
                                     }
                             }
                         }  
+                        "shaper" {
+                            switch($ConfigLineArray[3]) {
+                                "per-ip-shaper" {
+                                    $ConfigSection = "ConfigFirewallShaperPerIPShaper" 
+                                    Write-Output "Config firewall shaper per-ip-shaper line found."  
+                                }
+                                "traffic-shaper" {
+                                    $ConfigSection = "ConfigFirewallShaperTrafficShaper" 
+                                    Write-Output "Config firewall shaper traffic-shaper line found."                                    
+                                }
+                            }
+                        }
+                        "shaping-policy" {
+                            $ConfigSection = "ConfigFirewallShapingPolicy"
+                            Write-Output "Config firewall shaping-policy line found."
+                        }
                         "vip" {
                             $ConfigSection = "ConfigFirewallVIP"
                             Write-Output "Config firewall vip line found."
@@ -1085,7 +1124,6 @@ foreach ($Line in $loadedConfig) {
                             $vdom = $ConfigLineArray[1]
                             #Write-Output "vdom $vdom found."
                             $ConfigSection = $null
-                            break
                         }
                         "ConfigFirewallIPpool" {
                             $rule = InitFirewallIPpool
@@ -1104,6 +1142,19 @@ foreach ($Line in $loadedConfig) {
                             $rule = InitFirewallAddressGroup
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
                         } 
+                        "ConfigFirwallShaperPerIPShaper" {
+                            $rule = InitFirewallshaperperipshaper
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
+                        }
+                        "ConfigFirewallShaperTrafficShaper" {
+                            $rule = InitFirewallshapertrafficshaper
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
+                        }
+                        "ConfigFirewallShapingPolicy" {
+                            $rule = InitFirewallShapingPolicy
+                            $IDNumber = GetNumber($Value)
+                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force                            
+                        }
                         "ConfigRouterAccessList" {
                             $RouterAccessListName = $Value
                         }
@@ -1258,25 +1309,6 @@ foreach ($Line in $loadedConfig) {
                             }                        
                             else { $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force }
                         }
-                        #"ConfigSystemGlobal" {
-                        #    Switch ($ConfigLineArray[1]) {
-                        #        "admin-sport" {
-                        #            $AdminSport = $Value 
-                        #        }
-                        #        "admintimeout" {
-                        #            $AdminTimeout= $Value 
-                        #        }
-                        #        "hostname" {
-                        #            $Hostname = $Value 
-                        #        }
-                        #        "timezone" {
-                        #            $TimeZone = $Value 
-                        #        }
-                        #        "admin-server-cert" {
-                        #            $AdminCert = $Value
-                        #        }
-                        #    }
-                        #}
                         "ConfigSystemInterface" {
                             if ($ConfigLineArray[1] -eq "ip" ) {
                                 $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3] 
@@ -1414,6 +1446,18 @@ foreach ($Line in $loadedConfig) {
                             $rulelist = $rulelist | Sort-Object Name
                             CreateExcelSheet "Services-Group$VdomName" $rulelist  
                         }
+                        "ConfigFirwallShaperPerIPShaper" {
+                            $rulelist = $rulelist | Sort-Object Name
+                            CreateExcelSheet "ShaperPerIP$VdomName" $rulelist                               
+                        }
+                        "ConfigFirewallShaperTrafficShaper" {
+                            $rulelist = $rulelist | Sort-Object Name
+                            CreateExcelSheet "ShaperTrafficShaper$VdomName" $rulelist                              
+                        }
+                        "ConfigFirewallShapingPolicy" {
+                            $rulelist = $rulelist | Sort-Object ID
+                            CreateExcelSheet "ShapingPolicy$VdomName" $rulelist                              
+                        }
                         "ConfigRouterAccessList" {
                             $RouterAccessListArray = $RouterAccessListArray | Sort-Object Name,ID
                             CreateExcelSheet "Router-AccesList$vdomName" $RouterAccessListArray
@@ -1442,26 +1486,6 @@ foreach ($Line in $loadedConfig) {
                             $RouterRedistibuteArray = @()  
                         }
                         "ConfigSystemGlobal" {
-                            #$FirstSheet.Cells.Item(2,1) = 'Excel Creation Date'
-                            #$FirstSheet.Cells.Item(2,2) = $Date
-                            #$FirstSheet.Cells.Item(2,2).numberformat = "00"
-                            #$FirstSheet.Cells.Item(3,1) = 'Config Creation Date'
-                            #$FirstSheet.Cells.Item(3,2) = $ConfigDate 
-                            #$FirstSheet.Cells.Item(3,2).numberformat = "00"                       
-                            #$FirstSheet.Cells.Item(4,1) = 'Type'
-                            #$FirstSheet.Cells.Item(4,2) = $FWType
-                            #$FirstSheet.Cells.Item(5,1) = 'Version'
-                            #$FirstSheet.Cells.Item(5,2) = $FWVersion                       
-                            #$FirstSheet.Cells.Item(6,1) = 'ManagementPort'
-                            #$FirstSheet.Cells.Item(6,2) = $AdminSport
-                            #$FirstSheet.Cells.Item(7,1) = 'Certificate'
-                            #$FirstSheet.Cells.Item(7,2) = $AdminCert
-                            #$FirstSheet.Cells.Item(8,1) = 'TimeOut'
-                            #$FirstSheet.Cells.Item(8,2) = $AdminTimeout
-                            #$FirstSheet.Cells.Item(9,1) = 'Hostname'
-                            #$FirstSheet.Cells.Item(9,2) = $Hostname
-                            #$FirstSheet.Cells.Item(10,1) = 'TimeZone'
-                            #$FirstSheet.Cells.Item(10,2) = $TimeZone
                             UpdateFirstSheet $rule
                             $UsedRange = $FirstSheet.usedRange                  
                             $UsedRange.EntireColumn.AutoFit() | Out-Null
