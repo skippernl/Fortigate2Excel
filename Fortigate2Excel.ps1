@@ -278,7 +278,6 @@ Function InitSystemDHCP {
     $InitRule | Add-Member -type NoteProperty -name "dns-server1" -Value ""
     $InitRule | Add-Member -type NoteProperty -name "dns-server2" -Value ""
     $InitRule | Add-Member -type NoteProperty -name "ntp-server1" -Value ""
-
     return $InitRule
 }
 Function InitSystemGlobal {
@@ -732,6 +731,10 @@ Function CreateExcelSheetOSPF {
         $UsedRange = $Sheet.usedRange                  
         $UsedRange.EntireColumn.AutoFit() | Out-Null  
     }    
+}
+Function GetNumber ($NumberString) {
+    [int]$IntNum = [convert]::ToInt32($NumberString, 10)
+    return $IntNum
 }
 Function GetNumber ($NumberString) {
     [int]$IntNum = [convert]::ToInt32($NumberString, 10)
