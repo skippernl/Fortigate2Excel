@@ -1,19 +1,17 @@
 <#
 .SYNOPSIS
-Parse-FortiGateRules parses rules from a FortiGate device into a CSV file.
+Fortigate2Excel parses rules from a FortiGate device into a CSV file.
 .DESCRIPTION
-The Parse-FortiGateRules reads a FortiGate config file and pulls out the rules for each VDOM in the file into a CSV.
+The Fortigate2Excel reads a FortiGate config file and pulls out the configuration for each VDOM in the file into excell.
 .PARAMETER fortigateConfig
 [REQUIRED] This is the path to the FortiGate config file
-.PARAMETER utf8
-[OPTIONAL] This is a switch to parse a config in UTF8 formatting. Optional.
 .EXAMPLE
-.\Parse-FortiGateRules.ps1 -fortiGateConfig "c:\temp\config.conf"
+.\Fortigate2Excel.ps1 -fortiGateConfig "c:\temp\config.conf"
 Parses a FortiGate config file and places the CSV file in the same folder where the config was found.
 .NOTES
-Author: Drew Hjelm (@drewhjelm) (creates csv of ruleset only)
-Adapted by : Xander Angenent (@XaAng70)
-Last Modified: 26/11/19
+Author: Xander Angenent
+Idea: Drew Hjelm (@drewhjelm) (creates csv of ruleset only)
+Last Modified: 18/12/19
 #Estimated completion time from http://mylifeismymessage.net/1672/
 #>
 Param
@@ -75,6 +73,14 @@ Function InitFirewallIPpool {
     $InitRule | Add-Member -type NoteProperty -name associated-interface -Value ""
     return $InitRule
 }
+Function InitFirewallLdbMonitor {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name type -Value ""
+    $InitRule | Add-Member -type NoteProperty -name interval -Value ""
+    $InitRule | Add-Member -type NoteProperty -name prt -Value ""
+    return $InitRule
+}
 Function InitFirewallRule {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
@@ -95,7 +101,7 @@ Function InitFirewallRule {
     $InitRule | Add-Member -type NoteProperty -name application-list -Value ""
     #Default is disable
     $InitRule | Add-Member -type NoteProperty -name nat -Value "disable"
-    $InitRule | Add-Member -type NoteProperty -name status -Value ""
+    $InitRule | Add-Member -type NoteProperty -name status -Value "enable"
     $InitRule | Add-Member -type NoteProperty -name webfilter-profile -Value ""
     $InitRule | Add-Member -type NoteProperty -name poolname -Value ""
     $InitRule | Add-Member -type NoteProperty -name comments -Value ""
@@ -152,6 +158,7 @@ Function InitFirewallShapingPolicy {
     $InitRule | Add-Member -type NoteProperty -name dsraddr  -Value ""
     $InitRule | Add-Member -type NoteProperty -name service -Value ""
     $InitRule | Add-Member -type NoteProperty -name app-category -Value ""
+    $InitRule | Add-Member -type NoteProperty -name internet-service-id -Value ""
     $InitRule | Add-Member -type NoteProperty -name url-category -Value ""
     $InitRule | Add-Member -type NoteProperty -name dstintf -Value ""
     $InitRule | Add-Member -type NoteProperty -name traffic-shaper -Value ""
@@ -171,6 +178,15 @@ Function InitFirewallVIP {
     $InitRule | Add-Member -type NoteProperty -name MappedPort -Value ""
     $InitRule | Add-Member -type NoteProperty -name comment -Value ""
     $InitRule | Add-Member -type NoteProperty -name color -Value ""
+    $InitRule | Add-Member -type NoteProperty -name type -Value ""
+    #When using loadbalance this values are used
+    #Setting ldb-method to none to indicate no loadbalance is doen
+    #this gets overwritten is loadbalance is used
+    $InitRule | Add-Member -type NoteProperty -name ldb-method -Value "none"
+    $InitRule | Add-Member -type NoteProperty -name ip -Value ""
+    $InitRule | Add-Member -type NoteProperty -name port -Value ""
+    $InitRule | Add-Member -type NoteProperty -name monitor -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
     return $InitRule
 }
 Function InitRouterAccessList {
@@ -493,6 +509,19 @@ Function ChangeFontExcelCell ($ChangeFontExcelCellSheet, $ChangeFontExcelCellRow
     $ChangeFontExcelCellSheet.Cells.Item($ChangeFontExcelCellRow, $ChangeFontExcelCellColumn).Font.ThemeColor = 4
     $ChangeFontExcelCellSheet.Cells.Item($ChangeFontExcelCellRow, $ChangeFontExcelCellColumn).Font.ColorIndex = 55
     $ChangeFontExcelCellSheet.Cells.Item($ChangeFontExcelCellRow, $ChangeFontExcelCellColumn).Font.Color = 8210719
+}
+Function CopyArrayMember ($ActiveArray) {
+    $NewMember = New-Object System.Object;
+    $NoteProperties = $ActiveArray | get-member -Type NoteProperty
+
+    foreach ($ActiveMember in $ActiveArray) {
+        foreach ($Noteproperty in $NoteProperties) {
+            $PropertyString = [string]$NoteProperty.Name
+            $Value = $ActiveMember.$PropertyString         
+            $NewMember | Add-Member -MemberType NoteProperty -Name $PropertyString -Value $Value
+        }                      
+    }    
+    Return $NewMember
 }
 Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
     $NoteProperties = $ActiveArray | get-member -Type NoteProperty
@@ -871,7 +900,7 @@ foreach ($Line in $loadedConfig) {
     $Proc = $Counter/$MaxCounter*100
     $ProcString = $Proc.ToString("0.00")
     $elapsedTime = $(get-date) - $startTime 
-    if ($Counter -eq 0) { $estimatedTotalSeconds = $MaxCounter/ 1 * $elapsedTime.TotalSecond }
+    if ($Counter -eq 0) { $estimatedTotalSeconds = $MaxCounter / 1 * $elapsedTime.TotalSecond }
     else { $estimatedTotalSeconds = $MaxCounter/ $counter * $elapsedTime.TotalSeconds }
     $estimatedTotalSecondsTS = New-TimeSpan -seconds $estimatedTotalSeconds
     $estimatedCompletionTime = $startTime + $estimatedTotalSecondsTS    
@@ -922,6 +951,11 @@ foreach ($Line in $loadedConfig) {
                     $SUBSection = $True
                     $SUBSectionConfig = "ospfinterface"                    
                 }
+                "realservers" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "VIPrealservers"
+                    $RuleRealServer = $rule
+                }
                 "redistribute" {
                     $SUBSection = $True
                     $SUBSectionConfig = "routerredistribute"
@@ -955,6 +989,10 @@ foreach ($Line in $loadedConfig) {
                             $ConfigSection = "ConfigFirewallAddrgrp" 
                             Write-Output "Config firewall addgrp line found."
                         }   
+                        "ldb-monitor" {
+                            $ConfigSection = "ConfigFirewallLdbMonitor"
+                            Write-Output "Config firewall ldb-monitor line found."
+                        }
                         "ippool" {
                             $ConfigSection = "ConfigFirewallIPpool" 
                             Write-Output "Config firewall ippool line found."                            
@@ -1129,6 +1167,13 @@ foreach ($Line in $loadedConfig) {
                             $IDNumber = GetNumber($Value)
                             $RouterAccessList | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
+                        "VIPrealservers" {
+                            #If the rule is copied then there will be 2 lines with the same data in the array
+                            #Using the function CopyArrayMember to create a new $rule with data that is in the old rule
+                            $Rule = CopyArrayMember $RuleRealServer 
+                            $IDNumber = GetNumber($Value)
+                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -Force
+                        }
                         "virtualwanlinkhealthcheck" {
                             $VirtualWanLinkHealthCheck = InitVirtualWanLinkHealthCheck
                             $VirtualWanLinkHealthCheck | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
@@ -1160,6 +1205,10 @@ foreach ($Line in $loadedConfig) {
                         }
                         "ConfigFirewallIPpool" {
                             $rule = InitFirewallIPpool
+                            $rule | Add-Member -MemberType NoteProperty -Name Name -Value $Value -force
+                        }
+                        "ConfigFirewallLdbMonitor" {
+                            $rule = InitFirewallLdbMonitor
                             $rule | Add-Member -MemberType NoteProperty -Name Name -Value $Value -force
                         }
                         "ConfigFirewallPolicy" {
@@ -1304,7 +1353,10 @@ foreach ($Line in $loadedConfig) {
                         }  
                         "virtualwanlinkservice" {
                             $VirtualWanLinkService | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force                           
-                        }                 
+                        }  
+                        default {
+                            $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                        }               
                     }
                 }
                 else {
@@ -1423,25 +1475,40 @@ foreach ($Line in $loadedConfig) {
                         }
                         "virtualwanlinkservice" {
                             $VirtualWanLinkServiceArray += $VirtualWanLinkService
-                        }                        
+                        }     
+                        default {
+                            $rulelist += $rule
+                        }                   
                     }
                 }
-                else {                
-                    if ($ConfigSection -eq "ConfigSystemDHCP") {
-                        CreateExcelSheetDHCP
-                        $DHCPRangeArray = @()
-                        $DHCPOptionsArray = @()
-                        $DHCPReservedAddressArray = @()
-                    }
-                    else { $ruleList += $rule }
+                else {   
+                    switch ($ConfigSection) {
+                        "ConfigSystemDHCP" {
+                            CreateExcelSheetDHCP
+                            $DHCPRangeArray = @()
+                            $DHCPOptionsArray = @()
+                            $DHCPReservedAddressArray = @()
+                        }
+                        "ConfigFirewallVIP"  {
+                            if ($SUBSectionConfig -ne "VIPRealservers") {
+                                $ruleList += $rule 
+                            }
+                        }
+                        Default { $ruleList += $rule }
+                    }   
                 }
             }
         }                 
         "end" {
             if ($SUBSection) {
                 $SUBSection = $False
-                if ($SUBSectionConfig -eq "routerredistribute") { 
-                    $RouterRedistibuteArray += $RouterRedistribute 
+                switch ($ConfigSection) {
+                    "routerredistribute" { 
+                        $RouterRedistibuteArray += $RouterRedistribute 
+                    }
+                    "VIPRealservers" {
+                        $ruleList += $rule
+                    } 
                 } 
             }
             else {            
@@ -1467,6 +1534,10 @@ foreach ($Line in $loadedConfig) {
                             $rulelist = $rulelist | Sort-Object Name
                             CreateExcelSheet "IPpool$VdomName" $ruleList
                         }
+                        "ConfigFirewallLdbMonitor" {
+                            $rulelist = $rulelist | Sort-Object Name
+                            CreateExcelSheet "Ldb-Monitor$VdomName" $ruleList                            
+                        }
                         "ConfigFirewallServiceCategory" { 
                             $rulelist = $rulelist | Sort-Object Name
                             CreateExcelSheet "Services-Category$VdomName" $rulelist  
@@ -1491,6 +1562,10 @@ foreach ($Line in $loadedConfig) {
                             $rulelist = $rulelist | Sort-Object ID
                             CreateExcelSheet "ShapingPolicy$VdomName" $rulelist                              
                         }
+                        "ConfigFirewallVIP" {
+                            $rulelist = $rulelist | Sort-Object Name,ID
+                            CreateExcelSheet "VIP$VdomName" $rulelist
+                        }                        
                         "ConfigRouterAccessList" {
                             $RouterAccessListArray = $RouterAccessListArray | Sort-Object Name,ID
                             CreateExcelSheet "Router-AccesList$vdomName" $RouterAccessListArray
@@ -1548,10 +1623,6 @@ foreach ($Line in $loadedConfig) {
                         "Configvpnipsecphase2" { 
                             $rulelist = $rulelist | Sort-Object Name
                             CreateExcelSheet "VPN-Phase2$VdomName" $rulelist 
-                        }
-                        "ConfigFirewallVIP" {
-                            $rulelist = $rulelist | Sort-Object Name
-                            CreateExcelSheet "VIP$VdomName" $rulelist
                         }
                     }        
                     $ConfigSection = $null
