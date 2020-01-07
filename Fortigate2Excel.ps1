@@ -60,7 +60,7 @@ Function InitFirewallAddress {
 Function InitFirewallAddressGroup {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
-    $InitRule | Add-Member -type NoteProperty -name Members -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Member -Value ""
     $InitRule | Add-Member -type NoteProperty -name UUID -Value ""
     return $InitRule
 }
@@ -180,7 +180,7 @@ Function InitFirewallVIP {
     $InitRule | Add-Member -type NoteProperty -name color -Value ""
     $InitRule | Add-Member -type NoteProperty -name type -Value ""
     #When using loadbalance this values are used
-    #Setting ldb-method to none to indicate no loadbalance is doen
+    #Setting ldb-method to none to indicate no loadbalance is done
     #this gets overwritten is loadbalance is used
     $InitRule | Add-Member -type NoteProperty -name ldb-method -Value "none"
     $InitRule | Add-Member -type NoteProperty -name ip -Value ""
@@ -395,6 +395,35 @@ Function InitSystemZone {
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name interface -Value ""
     return $InitRule    
+}
+Function InitUserGroup {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name member -Value ""
+    return $InitRule      
+}
+Function InitUserLdap {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name server -Value ""    
+    $InitRule | Add-Member -type NoteProperty -name cnid -Value ""
+    $InitRule | Add-Member -type NoteProperty -name dn -Value ""
+    $InitRule | Add-Member -type NoteProperty -name type -Value ""
+    $InitRule | Add-Member -type NoteProperty -name username -Value ""
+    $InitRule | Add-Member -type NoteProperty -name secure -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ca-cert -Value ""
+    $InitRule | Add-Member -type NoteProperty -name port -Value ""
+    return $InitRule      
+}
+Function InitUserLocal {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name type -Value ""
+    $InitRule | Add-Member -type NoteProperty -name two-factor -Value "None" 
+    $InitRule | Add-Member -type NoteProperty -name Fortitoken -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name email-to -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ldap-server -Value ""
+    return $InitRule      
 }
 Function InitVirtualWanLinkHealthCheck {
     $InitRule = New-Object System.Object;
@@ -910,7 +939,7 @@ foreach ($Line in $loadedConfig) {
     $ConfigLineArray = $Configline.Split(" ")    
     switch($ConfigLineArray[0]) {
         "config" {
-            switch($ConfigLineArray[1]) {
+              switch($ConfigLineArray[1]) {
                 "area" {
                     $SUBSection = $True
                     $SUBSectionConfig = "ospfarea"                      
@@ -1099,7 +1128,23 @@ foreach ($Line in $loadedConfig) {
                             Write-Output "Config system zone line found." 
                         }
                     } 
-                }          
+                }  
+                "user" { 
+                    switch($ConfigLineArray[2]) {
+                        "group" {
+                            $ConfigSection = "ConfigUsergroup"
+                            Write-Output "Config user group line found."
+                        }
+                        "ldap" {
+                            $ConfigSection = "ConfigUserLdap"
+                            Write-Output "Config user ldap line found."
+                        }
+                        "local" {
+                            $ConfigSection = "ConfigUserLocal"
+                            Write-Output "Config user local line found."                           
+                        }
+                    }
+                }        
                 "vdom" { $ConfigSection = "ConfigVDOM" }
                 "vpn" {
                     switch($ConfigLineArray[3]) {
@@ -1261,6 +1306,18 @@ foreach ($Line in $loadedConfig) {
                         "ConfigSystemZone" {
                             $rule = InitSytemInterface
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force                            
+                        }
+                        "ConfigUsergroup" {
+                            $rule = InitUserGroup
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
+                        }
+                        "ConfigUserLdap" {
+                            $rule = InitUserLdap
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -Force
+                        }
+                        "ConfigUserLocal" {
+                            $rule = InitUserLocal
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -Force                            
                         }
                         "ConfigFirewallServiceCategory" {
                             $rule = InitFirewallServiceCategory
@@ -1615,6 +1672,18 @@ foreach ($Line in $loadedConfig) {
                         "ConfigSystemZone" {
                             $rulelist = $rulelist | Sort-Object Name
                             CreateExcelSheet "Zone$VdomName" $rulelist 
+                        }
+                        "ConfigUsergroup" {
+                            $rulelist = $rulelist | Sort-Object Name
+                            CreateExcelSheet "User-Group$VdomName" $ruleList
+                        }
+                        "ConfigUserLdap" {
+                            $rulelist = $rulelist | Sort-Object Name
+                            CreateExcelSheet "User-Ldap$VdomName" $rulelist                             
+                        }
+                        "ConfigUserLocal" {
+                            $rulelist = $rulelist | Sort-Object Name
+                            CreateExcelSheet "User-Local$VdomName" $rulelist                         
                         }
                         "Configvpnipsecphase1" { 
                             $rulelist = $rulelist | Sort-Object Name
