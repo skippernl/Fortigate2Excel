@@ -117,6 +117,7 @@ Function InitFirewallServiceCustom {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name category -Value ""
+    $initRule | Add-Member -type NoteProperty -name color -Value ""
     $InitRule | Add-Member -type NoteProperty -name protocol -Value ""
     $InitRule | Add-Member -type NoteProperty -name tcp-portrange -Value ""
     $InitRule | Add-Member -type NoteProperty -name udp-portrange -Value ""
@@ -365,6 +366,9 @@ Function InitSytemInterface {
     $InitRule | Add-Member -type NoteProperty -name status -Value ""
     $InitRule | Add-Member -type NoteProperty -name interface -Value ""
     $InitRule | Add-Member -type NoteProperty -name vlanid -Value ""
+    $InitRule | Add-Member -type NoteProperty -name mtu-override -Value ""
+    $InitRule | Add-Member -type NoteProperty -name mtu -Value ""
+    $InitRule | Add-Member -type NoteProperty -name stp -Value ""
     return $InitRule
 }
 Function InitSystemLinkMonitor {
@@ -382,6 +386,23 @@ Function InitSystemLinkMonitor {
     $InitRule | Add-Member -type NoteProperty -name status -Value ""
     $InitRule | Add-Member -type NoteProperty -name srcintf -Value ""
     $InitRule | Add-Member -type NoteProperty -name server -Value ""
+    return $InitRule
+}
+Function InitSystemSettings {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name inspection-mode -Value ""
+    $InitRule | Add-Member -type NoteProperty -name sip-nat-trace -Value "Enable"
+    $InitRule | Add-Member -type NoteProperty -name default-voip-alg-mode -Value ""
+    $InitRule | Add-Member -type NoteProperty -name gui-dns-database -Value "Disable"
+    $InitRule | Add-Member -type NoteProperty -name gui-ips -Value "Disable"
+    return $InitRule
+}
+Function InitSystemSessionHelper {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name protocol -Value ""
+    $InitRule | Add-Member -type NoteProperty -name port -Value ""
     return $InitRule
 }
 Function InitSystemVirtualWanLink {
@@ -410,9 +431,9 @@ Function InitUserLdap {
     $InitRule | Add-Member -type NoteProperty -name dn -Value ""
     $InitRule | Add-Member -type NoteProperty -name type -Value ""
     $InitRule | Add-Member -type NoteProperty -name username -Value ""
-    $InitRule | Add-Member -type NoteProperty -name secure -Value ""
-    $InitRule | Add-Member -type NoteProperty -name ca-cert -Value ""
-    $InitRule | Add-Member -type NoteProperty -name port -Value ""
+    $InitRule | Add-Member -type NoteProperty -name secure -Value "disabled"
+    $InitRule | Add-Member -type NoteProperty -name ca-cert -Value "none"
+    $InitRule | Add-Member -type NoteProperty -name port -Value "389"
     return $InitRule      
 }
 Function InitUserLocal {
@@ -1118,6 +1139,15 @@ foreach ($Line in $loadedConfig) {
                             $ConfigSection = "ConfigSystemLinkmonitor"
                             Write-Output "Config system link-monitor line found."
                         }
+                        "Settings" {
+                            $ConfigSection = "ConfigSystemSettings" 
+                            $rule = InitSystemSettings
+                            Write-Output "Config system Settings line found."
+                        }
+                        "session-helper" {
+                            $ConfigSection = "ConfigSystemSessionHelper"
+                            Write-Output "Config system session-helper line found."
+                        }
                         "virtual-wan-link" {
                             $ConfigSection = "ConfigSystemVirtualWanLink"
                             Write-Output "Config system virtual-wan-link line found."                            
@@ -1302,6 +1332,11 @@ foreach ($Line in $loadedConfig) {
                         "ConfigSystemInterface" {
                             $rule = InitSytemInterface
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
+                        }
+                        "ConfigSystemSessionHelper" {
+                            $rule = InitSystemSessionHelper
+                            $IDNumber = GetNumber($Value)
+                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
                         "ConfigSystemZone" {
                             $rule = InitSytemInterface
@@ -1643,9 +1678,6 @@ foreach ($Line in $loadedConfig) {
                                     $rulelist = $rulelist | Sort-Object ID
                                     CreateExcelSheet "Router-Policy$VdomName" $rulelist 
                                 }
-                                #default {
-                                #    CreateExcelSheet "Router-$RouterSection$VdomName" $RouterRedistibuteArray                                
-                                #}
                             } 
                             $RouterAccessListArray = @()
                             $RouterRedistibuteArray = @()  
@@ -1665,6 +1697,13 @@ foreach ($Line in $loadedConfig) {
                         }
                         "ConfigSystemLinkmonitor" {
                             CreateExcelSheet "Link-Monitor$VdomName" $rulelist                         
+                        }
+                        "ConfigSystemSettings" {
+                            CreateExcelSheet "SystemSettings$VdomName" $ruleList
+                        }
+                        "ConfigSystemSessionHelper" {
+                            $ruleList = $ruleList | Sort-Object ID
+                            CreateExcelSheet "Session-Helper$VdomName" $ruleList
                         }
                         "ConfigSystemVirtualWanLink" {
                             CreateExcelSheetVirtualWanLink
