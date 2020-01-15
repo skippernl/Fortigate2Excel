@@ -295,12 +295,13 @@ Function InitSystemDHCP {
     $InitRule | Add-Member -type NoteProperty -name "dns-server1" -Value ""
     $InitRule | Add-Member -type NoteProperty -name "dns-server2" -Value ""
     $InitRule | Add-Member -type NoteProperty -name "ntp-server1" -Value ""
+    $InitRule | Add-Member -type NoteProperty -Name "filename" -Value ""
     return $InitRule
 }
 Function InitSystemGlobal {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name admin-sport -Value "443"
-    $InitRule | Add-Member -type NoteProperty -name admin-Cert -Value "Selfsigned"
+    $InitRule | Add-Member -type NoteProperty -name admin-server-cert -Value "Selfsigned"
     $InitRule | Add-Member -type NoteProperty -name admintimeout -Value ""
     $initRule | Add-Member -type NoteProperty -name compliance-check -Value ""
     $initRule | Add-Member -type NoteProperty -name gui-device-latitude -Value ""
@@ -395,6 +396,8 @@ Function InitSystemSettings {
     $InitRule | Add-Member -type NoteProperty -name default-voip-alg-mode -Value ""
     $InitRule | Add-Member -type NoteProperty -name gui-dns-database -Value "Disable"
     $InitRule | Add-Member -type NoteProperty -name gui-ips -Value "Disable"
+    $InitRule | Add-Member -type NoteProperty -name sip-helper -Value "Disable"
+    $InitRule | Add-Member -type NoteProperty -name gui-explicit-proxy -Value "Disable"
     return $InitRule
 }
 Function InitSystemSessionHelper {
@@ -578,7 +581,7 @@ Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
     foreach ($Noteproperty in $NoteProperties) {
         $PropertyString = [string]$NoteProperty.Name
         #Keep passwords/psksecrets out of the documentation
-        if (($PropertyString -ne "password") -and ($PropertyString -ne "psksecret")) {
+        if (($PropertyString -ne "password") -and ($PropertyString -ne "psksecret") -and ($PropertyString -ne "passwd")) {
             $excel.cells.item($row,$Column) = $PropertyString
             $Column++
         }
@@ -588,7 +591,7 @@ Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
         $Column=1
         foreach ($Noteproperty in $NoteProperties) {
             $PropertyString = [string]$NoteProperty.Name
-            if (($PropertyString -ne "password") -and ($PropertyString -ne "psksecret")) {
+            if (($PropertyString -ne "password") -and ($PropertyString -ne "psksecret") -and ($PropertyString -ne "passwd")) {
                 $Value = $ActiveMember.$PropertyString         
                 $excel.cells.item($row,$Column) = $Value
                 $Column++
