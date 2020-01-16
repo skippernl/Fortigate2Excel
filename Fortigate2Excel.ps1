@@ -818,10 +818,6 @@ Function GetNumber ($NumberString) {
     [int]$IntNum = [convert]::ToInt32($NumberString, 10)
     return $IntNum
 }
-Function GetNumber ($NumberString) {
-    [int]$IntNum = [convert]::ToInt32($NumberString, 10)
-    return $IntNum
-}
 Function Get-ScriptDirectory
 {
   $Invocation = (Get-Variable MyInvocation -Scope 1).Value
@@ -1027,6 +1023,11 @@ foreach ($Line in $loadedConfig) {
                 "service" {
                     $SUBSection = $True
                     $SUBSectionConfig = "virtualwanlinkservice"                     
+                }
+                "tagging" {
+                    $SUBSection = $true
+                    $SUBSectionConfig = "tagging"
+                    #Section is being ignored for now
                 }
                 "firewall" {
                     switch($ConfigLineArray[2]) {
@@ -1245,6 +1246,9 @@ foreach ($Line in $loadedConfig) {
                             $IDNumber = GetNumber($Value)
                             $RouterAccessList | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
+                        "tagging" {
+                            #Do nothing
+                        }
                         "VIPrealservers" {
                             #If the rule is copied then there will be 2 lines with the same data in the array
                             #Using the function CopyArrayMember to create a new $rule with data that is in the old rule
@@ -1426,6 +1430,9 @@ foreach ($Line in $loadedConfig) {
                             }
                             else { $RouterAccessList | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force }
                         }
+                        "tagging" {
+                            #Do nothing
+                        }
                         "virtualwanlinkhealthcheck" {
                             if ($ConfigLineArray[1] -eq "members") {
                                 if ($ConfigLineArray.Count -gt 3) {
@@ -1561,6 +1568,9 @@ foreach ($Line in $loadedConfig) {
                         }
                         "RouterAccessListRule" {
                             $RouterAccessListArray += $RouterAccessList
+                        }
+                        "tagging" {
+                            #Do nothing
                         }
                         "virtualwanlinkhealthcheck" {
                             $VirtualWanLinkHealthCheckArray += $VirtualWanLinkHealthCheck
