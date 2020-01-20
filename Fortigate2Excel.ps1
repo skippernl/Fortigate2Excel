@@ -55,6 +55,7 @@ Function InitFirewallAddress {
     $InitRule | Add-Member -type NoteProperty -name Network -Value ""
     $InitRule | Add-Member -type NoteProperty -name Wildcard-fqdn -Value ""
     $InitRule | Add-Member -type NoteProperty -name FQDN -Value ""
+    $InitRule | Add-Member -type NoteProperty -name tag -Value ""
     return $InitRule
 }
 Function InitFirewallAddressGroup {
@@ -296,6 +297,7 @@ Function InitSystemDHCP {
     $InitRule | Add-Member -type NoteProperty -name "dns-server2" -Value ""
     $InitRule | Add-Member -type NoteProperty -name "ntp-server1" -Value ""
     $InitRule | Add-Member -type NoteProperty -Name "filename" -Value ""
+    $InitRule | Add-Member -type NoteProperty -Name status -Value "Enable"
     return $InitRule
 }
 Function InitSystemGlobal {
@@ -418,6 +420,13 @@ Function InitSystemZone {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name interface -Value ""
+    return $InitRule    
+}
+Function InitTag {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Category -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Tags -Value ""
     return $InitRule    
 }
 Function InitUserGroup {
@@ -562,6 +571,27 @@ Function ChangeFontExcelCell ($ChangeFontExcelCellSheet, $ChangeFontExcelCellRow
     $ChangeFontExcelCellSheet.Cells.Item($ChangeFontExcelCellRow, $ChangeFontExcelCellColumn).Font.ThemeColor = 4
     $ChangeFontExcelCellSheet.Cells.Item($ChangeFontExcelCellRow, $ChangeFontExcelCellColumn).Font.ColorIndex = 55
     $ChangeFontExcelCellSheet.Cells.Item($ChangeFontExcelCellRow, $ChangeFontExcelCellColumn).Font.Color = 8210719
+}
+Function ConvertTagArrayToLine ($ConvertTagArray) {
+
+    $Line = ""
+    If ($ConvertTagArray) {
+        foreach ($ConvertTag in $ConvertTagArray) {
+            $Line = $line + "("
+            $NoteProperties = $ConvertTagArray | get-member -Type NoteProperty
+            foreach ($Noteproperty in $NoteProperties) {
+                $PropertyString = [string]$NoteProperty.Name
+                $Line = $Line + $ConvertTag.$PropertyString + ","
+            }
+            #Drop the last letter (,)
+            $Line = $Line.Substring(0,$Line.Length-1)
+            $Line = $Line + "),"
+        }
+        #Drop the last letter (,)
+        $Line = $Line.Substring(0,$Line.Length-1)
+    }
+
+    Return $Line
 }
 Function CopyArrayMember ($ActiveArray) {
     $NewMember = New-Object System.Object;
@@ -944,6 +974,7 @@ $RouterNetworkArray = @()
 $RouterDistibuteListArray = @()
 $RouterNeighborArray = @()
 $HAMGMTInterfaceArray = @()
+$ObjectTagArray = @()
 $OSPFRouterID = "no-ospf"
 foreach ($Line in $loadedConfig) {
     $Proc = $Counter/$MaxCounter*100
@@ -1027,7 +1058,6 @@ foreach ($Line in $loadedConfig) {
                 "tagging" {
                     $SUBSection = $true
                     $SUBSectionConfig = "tagging"
-                    #Section is being ignored for now
                 }
                 "firewall" {
                     switch($ConfigLineArray[2]) {
@@ -1247,7 +1277,8 @@ foreach ($Line in $loadedConfig) {
                             $RouterAccessList | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
                         "tagging" {
-                            #Do nothing
+                            $ObjectTag = InitTag
+                            $ObjectTag | Add-Member -MemberType NoteProperty -Name Name -Value $Value -force
                         }
                         "VIPrealservers" {
                             #If the rule is copied then there will be 2 lines with the same data in the array
@@ -1426,12 +1457,12 @@ foreach ($Line in $loadedConfig) {
                             if ($ConfigLineArray[1] -eq "prefix") {
                                 if ($ConfigLineArray[2] -eq "any") { $Value = "0.0.0.0/0" } 
                                 else { $Value = $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3] }
-                                $RouterAccessList | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -forc
+                                $RouterAccessList | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                             }
                             else { $RouterAccessList | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force }
                         }
                         "tagging" {
-                            #Do nothing
+                            $ObjectTag | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
                         "virtualwanlinkhealthcheck" {
                             if ($ConfigLineArray[1] -eq "members") {
@@ -1477,9 +1508,7 @@ foreach ($Line in $loadedConfig) {
                             } 
                         }
                         "Configvpnipsecphase1" {
-                            #if ($ConfigLineArray[1] -ne "psksecret") { 
                                 $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
-                            #}
                         }
                         "Configvpnipsecphase2" {
                             if (($ConfigLineArray[1] -eq "src-subnet") -or ($ConfigLineArray[1] -eq "dst-subnet")) {
@@ -1550,6 +1579,9 @@ foreach ($Line in $loadedConfig) {
                         "HA-MGMTInterfaces" {
                             $HAMGMTInterfaceArray += $HAMGMTInterface
                         }
+                        "ospfinterface" {
+                            $RouterInterfaceArray += $OSPFInterface
+                        }
                         "RouterDistibuteList" {
                             $RouterDistibuteListArray += $RouterDistibuteList
                         }
@@ -1563,14 +1595,11 @@ foreach ($Line in $loadedConfig) {
                         "RouterNetwork" {
                             $RouterNetworkArray += $RouterNetwork
                         }
-                        "ospfinterface" {
-                            $RouterInterfaceArray += $OSPFInterface
-                        }
                         "RouterAccessListRule" {
                             $RouterAccessListArray += $RouterAccessList
                         }
                         "tagging" {
-                            #Do nothing
+                            $ObjectTagArray += $ObjectTag
                         }
                         "virtualwanlinkhealthcheck" {
                             $VirtualWanLinkHealthCheckArray += $VirtualWanLinkHealthCheck
@@ -1606,6 +1635,13 @@ foreach ($Line in $loadedConfig) {
         }                 
         "end" {
             if ($SUBSection) {
+                Switch ($SUBSectionConfig) {
+                    "tagging" {
+                        $Value = ConvertTagArrayToLine $ObjectTagArray
+                        $rule | Add-Member -MemberType NoteProperty -Name tag -Value $Value -force
+                        $ObjectTagArray = @()
+                    }                    
+                }
                 $SUBSection = $False
                 switch ($ConfigSection) {
                     "routerredistribute" { 
