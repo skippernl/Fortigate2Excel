@@ -514,8 +514,8 @@ Function InitVpnipsecphase2 {
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name phase1name -Value ""
     $InitRule | Add-Member -type NoteProperty -name proposal -Value ""
-    $InitRule | Add-Member -type NoteProperty -name dhgrp -Value ""
-    $InitRule | Add-Member -type NoteProperty -name replay -Value ""
+    $InitRule | Add-Member -type NoteProperty -name dhgrp -Value "14,5"
+    $InitRule | Add-Member -type NoteProperty -name replay -Value "enable"
     $InitRule | Add-Member -type NoteProperty -name auto-negotiate -Value ""
     $InitRule | Add-Member -type NoteProperty -name comments -Value ""
     $InitRule | Add-Member -type NoteProperty -name keylifeseconds -Value ""
@@ -527,7 +527,7 @@ Function InitVpnipsecphase2 {
     $InitRule | Add-Member -type NoteProperty -name dst-name -Value ""
     #default keepalive = disable
     $InitRule | Add-Member -type NoteProperty -name keepalive -Value "disable"
-    $InitRule | Add-Member -type NoteProperty -name pfs -Value ""
+    $InitRule | Add-Member -type NoteProperty -name pfs -Value "enable"
     return $InitRule
 }
 Function CleanupLine ($LineToCleanUp) {
@@ -536,6 +536,7 @@ Function CleanupLine ($LineToCleanUp) {
     $i=1
     $ReturnValue = $null
     if ($LineToCleanUpArray.Count -gt 1) {
+        #Line has "" in it 
         DO {
             $LineToCleanUpArrayMember = $LineToCleanUpArray[$i].Trim()
             if ($LineToCleanUpArrayMember -ne "") {
@@ -546,8 +547,9 @@ Function CleanupLine ($LineToCleanUp) {
         } While ($i -le $LineToCleanUpArray.Count-1)
     }
     else {
+        #Line has only Space as seperators
         $LineToCleanUpArray = $LineToCleanUp.Split(' ')
-        if ($LineToCleanUpArray.Count -ge 8) {
+        if ($LineToCleanUpArray.Count -ge 3) {
             $i=2
             $ReturnValue = $null
             DO {
@@ -572,26 +574,41 @@ Function ChangeFontExcelCell ($ChangeFontExcelCellSheet, $ChangeFontExcelCellRow
     $ChangeFontExcelCellSheet.Cells.Item($ChangeFontExcelCellRow, $ChangeFontExcelCellColumn).Font.ColorIndex = 55
     $ChangeFontExcelCellSheet.Cells.Item($ChangeFontExcelCellRow, $ChangeFontExcelCellColumn).Font.Color = 8210719
 }
+Function ConvertHaInterfaces ($HAline) {
+#This function formats the online hbdev to a nicer format
+    $TempLine = "("
+    $HAArray = $HAline.Split(",")
+    for ($Counter=0;$Counter -le $HAArray.Count-1;$Counter++) {
+     $TempLine = $Templine + $HAArray[$Counter]
+     if ($Counter % 2 -eq 0) {
+      $TempLine = $TempLine + ","
+     }
+     else { $TempLine = $TempLine + "),(" }
+    }
+    $TempLine = $TempLine.Substring(0,$TempLine.Length-2)
+    #$TempLine = $TempLine + ")"
+    Return $TempLine
+}
 Function ConvertTagArrayToLine ($ConvertTagArray) {
-
-    $Line = ""
+#This function formats the SecurityTag (config tagging) subsection to a nice oneline
+    $TempLine = ""
     If ($ConvertTagArray) {
         foreach ($ConvertTag in $ConvertTagArray) {
-            $Line = $line + "("
+            $TempLine = $TempLine + "("
             $NoteProperties = $ConvertTagArray | get-member -Type NoteProperty
             foreach ($Noteproperty in $NoteProperties) {
                 $PropertyString = [string]$NoteProperty.Name
-                $Line = $Line + $ConvertTag.$PropertyString + ","
+                $TempLine = $TempLine + $ConvertTag.$PropertyString + ","
             }
             #Drop the last letter (,)
-            $Line = $Line.Substring(0,$Line.Length-1)
-            $Line = $Line + "),"
+            $TempLine = $TempLine.Substring(0,$TempLine.Length-1)
+            $TempLine = $TempLine + "),"
         }
         #Drop the last letter (,)
-        $Line = $Line.Substring(0,$Line.Length-1)
+        $TempLine = $TempLine.Substring(0,$TempLine.Length-1)
     }
 
-    Return $Line
+    Return $TempLine
 }
 Function CopyArrayMember ($ActiveArray) {
     $NewMember = New-Object System.Object;
@@ -924,9 +941,6 @@ DO {
 } While ($i -le 5)
 $loadedConfig = Get-Content $fortigateConfig
 $Counter=0
-#default values these are getting over written when they are changed
-#
-#End default values
 $MaxCounter=$loadedConfig.count
 $date = Get-Date -Format yyyyMMddHHmm
 $WorkingFolder = (Get-Item $fortigateConfig).DirectoryName
@@ -939,7 +953,7 @@ $Excel.Visible = $false
 $workbook = $excel.Workbooks.Add()
 $FirstSheet = $workbook.Worksheets.Item(1) 
 if ($Filename.Length -gt 31) {
-    Write-output "Sheetname cannot be longer that 31 caracters shorting name to fit."
+    Write-output "Sheetname cannot be longer that 32 caracters shorting name to fit."
     $SheetName = $FileName.Substring(0,31)
 }
 else {
@@ -1282,7 +1296,7 @@ foreach ($Line in $loadedConfig) {
                         }
                         "VIPrealservers" {
                             #If the rule is copied then there will be 2 lines with the same data in the array
-                            #Using the function CopyArrayMember to create a new $rule with data that is in the old rule
+                            #Using the Function CopyArrayMember to create a new $rule with data that is in the old rule
                             $Rule = CopyArrayMember $RuleRealServer 
                             $IDNumber = GetNumber($Value)
                             $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -Force
@@ -1313,7 +1327,6 @@ foreach ($Line in $loadedConfig) {
                         "ConfigVDOM" {
                             #look for vdom name 
                             $vdom = $ConfigLineArray[1]
-                            #Write-Output "vdom $vdom found."
                             $ConfigSection = $null
                         }
                         "ConfigFirewallIPpool" {
@@ -1494,9 +1507,6 @@ foreach ($Line in $loadedConfig) {
                 }
                 else {
                     switch ($ConfigSection) {   
-                        "ConfigSystemDHCP" {  
-                            $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force 
-                        }  
                         "ConfigFirewallAddress" {
                             if ($ConfigLineArray[1] -eq "subnet") {
                                 $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3] 
@@ -1507,10 +1517,17 @@ foreach ($Line in $loadedConfig) {
                                 $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                             } 
                         }
-                        "Configvpnipsecphase1" {
-                                $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                        "ConfigSystemDHCP" {  
+                            $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force 
+                        }  
+                        "ConfigSystemHA" {
+                            if ($ConfigLineArray[1] -eq "hbdev") { $Value = ConvertHaInterfaces $Value }
+                            $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force                             
                         }
-                        "Configvpnipsecphase2" {
+                        "Configvpnipsecphase1" {
+                            $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                        }
+                        "Configvpnipsecphase2" {                           
                             if (($ConfigLineArray[1] -eq "src-subnet") -or ($ConfigLineArray[1] -eq "dst-subnet")) {
                                 $Value= GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3] 
                                 $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
@@ -1795,7 +1812,6 @@ $FirstSheet.Activate()
 Write-Output "Writing Excelfile $ExcelFullFilePad.xls"
 $workbook.SaveAs($ExcelFullFilePad)
 $excel.Quit()
-#[System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null
 $elapsedTime = $(get-date) - $startTime
 $Minutes = $elapsedTime.Minutes
 $Seconds = $elapsedTime.Seconds
