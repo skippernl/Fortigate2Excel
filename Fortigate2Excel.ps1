@@ -283,6 +283,49 @@ Function InitRouterStatic {
     $InitRule | Add-Member -type NoteProperty -name virtual-wan-link -Value ""
     return $InitRule
 }
+Function InitSystemDDNS {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ddns-domain -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ddns-server -Value ""
+    $InitRule | Add-Member -type NoteProperty -name use-public-ip -Value "disable"
+    $InitRule | Add-Member -type NoteProperty -name monitor-interface -Value ""
+       
+}
+Function InitSystemDNSDatabase {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name authoritative -Value ""
+    $InitRule | Add-Member -type NoteProperty -name contact -Value ""
+    $InitRule | Add-Member -type NoteProperty -name DNSName -Value ""
+    $InitRule | Add-Member -type NoteProperty -name domain -Value ""
+    $InitRule | Add-Member -type NoteProperty -name forwarder -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ip-master -Value ""
+    $InitRule | Add-Member -type NoteProperty -name primary-name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name source-ip -Value ""
+    $InitRule | Add-Member -type NoteProperty -name status -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ttl -Value "86400"
+    $InitRule | Add-Member -type NoteProperty -name type -Value ""
+    $InitRule | Add-Member -type NoteProperty -name view -Value ""
+    return $InitRule 
+}
+Function InitSystemDNSEntry {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name hostname -Value ""
+    $InitRule | Add-Member -type NoteProperty -name type -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ip -Value ""
+    $InitRule | Add-Member -type NoteProperty -name status -Value ""
+    return $InitRule     
+}
+Function InitSystemDNSServer {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name interface -Value ""
+    $InitRule | Add-Member -type NoteProperty -name name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name mode -Value ""
+    $InitRule | Add-Member -type NoteProperty -name dnsfilter-profile -Value ""
+    return $InitRule 
+}
 Function InitSystemDHCP {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
@@ -305,18 +348,20 @@ Function InitSystemGlobal {
     $InitRule | Add-Member -type NoteProperty -name admin-sport -Value "443"
     $InitRule | Add-Member -type NoteProperty -name admin-server-cert -Value "Selfsigned"
     $InitRule | Add-Member -type NoteProperty -name admintimeout -Value ""
+    $InitRule | Add-Member -type NoteProperty -name alias -Value "    "
     $initRule | Add-Member -type NoteProperty -name compliance-check -Value ""
+    $InitRule | Add-Member -type NoteProperty -name disk-usage -Value ""
+    $InitRule | Add-Member -type NoteProperty -name gui-date-format -Value "yyyy/MM/dd"
     $initRule | Add-Member -type NoteProperty -name gui-device-latitude -Value ""
     $initRule | Add-Member -type NoteProperty -name gui-device-longitude -Value ""
-    $initRule | Add-Member -type NoteProperty -name gui-theme -Value ""
-    $InitRule | Add-Member -type NoteProperty -name alias -Value "    "
-    $InitRule | Add-Member -type NoteProperty -name disk-usage -Value ""
+    $initRule | Add-Member -type NoteProperty -name gui-theme -Value "green"
     $InitRule | Add-Member -type NoteProperty -name hostname -Value ""
     $InitRule | Add-Member -type NoteProperty -name proxy-auth-timeout -Value ""
-    $InitRule | Add-Member -type NoteProperty -name switch-controller -Value ""
     $InitRule | Add-Member -type NoteProperty -name remoteauthtimeout -Value ""
     $InitRule | Add-Member -type NoteProperty -name revision-backup-on-logout -Value ""
     $InitRule | Add-Member -type NoteProperty -name revision-image-auto-backup -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ssl-min-proto-version -Value "TLSv1-2"
+    $InitRule | Add-Member -type NoteProperty -name switch-controller -Value ""
     $InitRule | Add-Member -type NoteProperty -name tcp-halfclose-timer -Value ""
     $InitRule | Add-Member -type NoteProperty -name tcp-halfopen-time -Value ""
     $InitRule | Add-Member -type NoteProperty -name timezone -Value ""
@@ -325,18 +370,20 @@ Function InitSystemGlobal {
 }
 Function InitSystemHA {
     $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name Group-id -Value ""
-    $InitRule | Add-Member -type NoteProperty -name Group-Name -Value ""
-    $InitRule | Add-Member -type NoteProperty -name mode -Value ""
-    #Next line gets filterd out when creating the ExcelSheet
-    $InitRule | Add-Member -type NoteProperty -name Password -Value ""
-    $InitRule | Add-Member -type NoteProperty -name hbdev -Value ""
-    $InitRule | Add-Member -type NoteProperty -name session-sync-dev -Value ""
+    $InitRule | Add-Member -type NoteProperty -name group-id -Value ""
+    $InitRule | Add-Member -type NoteProperty -name group-Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name ha-mgmt-status -Value ""
-    $InitRule | Add-Member -type NoteProperty -name override -Value ""
-    $InitRule | Add-Member -type NoteProperty -name priority -Value ""
-    $InitRule | Add-Member -type NoteProperty -name session-pickup -Value ""
+    $InitRule | Add-Member -type NoteProperty -name hbdev -Value ""
+    $InitRule | Add-Member -type NoteProperty -name mode -Value ""
     $InitRule | Add-Member -type NoteProperty -name monitor -Value ""
+    #Next line gets filterd out when creating the ExcelSheet
+    $InitRule | Add-Member -type NoteProperty -name password -Value ""
+    $InitRule | Add-Member -type NoteProperty -name priority -Value ""
+    $InitRule | Add-Member -type NoteProperty -name override -Value ""
+    $InitRule | Add-Member -type NoteProperty -name session-pickup -Value ""
+    $InitRule | Add-Member -type NoteProperty -name session-sync-dev -Value ""
+    $InitRule | Add-Member -type NoteProperty -name sync-config -Value "enable"
+    
     return $InitRule
 }
 Function InitSystemHAMGMTInterfaces {
@@ -376,19 +423,20 @@ Function InitSytemInterface {
 }
 Function InitSystemLinkMonitor {
     $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
-    $InitRule | Add-Member -type NoteProperty -name Interface -Value ""
-    $InitRule | Add-Member -type NoteProperty -name protocol -Value ""
+    #Default values are set here they get overwritten if changed
+    $InitRule | Add-Member -type NoteProperty -name failtime -Value "5"
     $InitRule | Add-Member -type NoteProperty -name gateway-ip -Value ""
-    $InitRule | Add-Member -type NoteProperty -name interval -Value ""
-    $InitRule | Add-Member -type NoteProperty -name timeout -Value ""
-    $InitRule | Add-Member -type NoteProperty -name failtime -Value ""
-    $InitRule | Add-Member -type NoteProperty -name recoverytime -Value ""
-    $InitRule | Add-Member -type NoteProperty -name update-cascade-interface -Value ""
-    $InitRule | Add-Member -type NoteProperty -name update-static-route -Value ""
-    $InitRule | Add-Member -type NoteProperty -name status -Value ""
+    $InitRule | Add-Member -type NoteProperty -name interface -Value ""
+    $InitRule | Add-Member -type NoteProperty -name interval -Value "5"
+    $InitRule | Add-Member -type NoteProperty -name name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name protocol -Value ""
+    $InitRule | Add-Member -type NoteProperty -name recoverytime -Value "5"
     $InitRule | Add-Member -type NoteProperty -name srcintf -Value ""
     $InitRule | Add-Member -type NoteProperty -name server -Value ""
+    $InitRule | Add-Member -type NoteProperty -name status -Value ""
+    $InitRule | Add-Member -type NoteProperty -name timeout -Value ""
+    $InitRule | Add-Member -type NoteProperty -name update-cascade-interface -Value ""
+    $InitRule | Add-Member -type NoteProperty -name update-static-route -Value ""    
     return $InitRule
 }
 Function InitSystemSettings {
@@ -697,6 +745,27 @@ Function CreateExcelSheetDHCP {
     $UsedRange = $Sheet.usedRange                  
     $UsedRange.EntireColumn.AutoFit() | Out-Null    
 }
+Function CreateExcelSheetDNSDatabase {
+    $row = 1
+    $Sheet = $workbook.Worksheets.Add()
+    $SheetName = "DNSDatabase$VdomName"
+    $Sheet.Name = $SheetName
+    $Column=1
+    $excel.cells.item($row,$Column) = "DNSDatabase"
+    ChangeFontExcelCell $Sheet $row $Column
+    $row++       
+    $row = CreateExcelTabel $Sheet $ruleList
+    if ($DNSEntryArray) {
+        $excel.cells.item($row,$Column) = "DNS Entries"
+        ChangeFontExcelCell $Sheet $row $Column
+        $row++      
+        $DNSEntryArray = $DNSEntryArray | Sort-Object ID  
+        $row = CreateExcelTabel $Sheet $DNSEntryArray       
+    }
+    $UsedRange = $Sheet.usedRange                  
+    $UsedRange.EntireColumn.AutoFit() | Out-Null     
+}
+
 Function CreateExcelSheetHA {
     #If group-name is empty HA is not active and this excel tab would be useless
     if ($rule."group-name" -ne "") {
@@ -978,6 +1047,7 @@ $ruleList = @()
 $DHCPRangeArray = @()
 $DHCPOptionsArray = @()
 $DHCPReservedAddressArray = @()
+$DNSEntryArray = @()
 $VirtualWanLinkMemberArray = @()
 $VirtualWanLinkHealthCheckArray = @()
 $VirtualWanLinkServiceArray = @()
@@ -1012,67 +1082,11 @@ foreach ($Line in $loadedConfig) {
                 "distribute-list" {
                     $SUBSection = $True
                     $SUBSectionConfig = "Routerdistributelist"                 
-                }    
-                "ha-mgmt-interfaces" {
-                    $SUBSection = $true
-                    $SUBSectionConfig = "HA-MGMTInterfaces"
-                }             
-                "health-check" {
-                    $SUBSection = $True
-                    $SUBSectionConfig = "virtualwanlinkhealthcheck"                 
-                }                
-                "ip-range" {
-                    $SUBSection = $True
-                    $SUBSectionConfig = "dhcpiprange"
-                }
-                "members" {
-                    $SUBSection = $True
-                    $SUBSectionConfig = "virtualwanlinkmember"                     
                 }  
-                "neighbor" {
+                "dns-entry" {
                     $SUBSection = $True
-                    $SUBSectionConfig = "RouterNeighbor"                     
-                }
-                "network" {
-                    $SUBSection = $True
-                    $SUBSectionConfig = "RouterNetwork"                       
-                }             
-                "options" {
-                    $SUBSection = $True
-                    $SUBSectionConfig = "dhcpoptions"
-                }
-                "ospf-interface" {
-                    $SUBSection = $True
-                    $SUBSectionConfig = "ospfinterface"                    
-                }
-                "realservers" {
-                    $SUBSection = $True
-                    $SUBSectionConfig = "VIPrealservers"
-                    $RuleRealServer = $rule
-                }
-                "redistribute" {
-                    $SUBSection = $True
-                    $SUBSectionConfig = "routerredistribute"
-                    $Value = CleanupLine $ConfigLine
-                    $RouterRedistribute = InitRouterRedistribute
-                    $RouterRedistribute | Add-Member -MemberType NoteProperty -Name "Redistribute" -Value $Value -force
-                }
-                "reserved-address" {
-                    $SUBSection = $True
-                    $SUBSectionConfig = "dhcpreservedaddress"                 
-                }
-                "rule" {
-                    $SUBSection = $True
-                    $SUBSectionConfig = "RouterAccessListRule"                     
-                }
-                "service" {
-                    $SUBSection = $True
-                    $SUBSectionConfig = "virtualwanlinkservice"                     
-                }
-                "tagging" {
-                    $SUBSection = $true
-                    $SUBSectionConfig = "tagging"
-                }
+                    $SUBSectionConfig = "DNSEntry"                     
+                }  
                 "firewall" {
                     switch($ConfigLineArray[2]) {
                         "policy" { 
@@ -1132,7 +1146,55 @@ foreach ($Line in $loadedConfig) {
                             Write-Output "Config firewall vip line found."
                         }                 
                     }
+                }                 
+                "ha-mgmt-interfaces" {
+                    $SUBSection = $true
+                    $SUBSectionConfig = "HA-MGMTInterfaces"
+                }             
+                "health-check" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "virtualwanlinkhealthcheck"                 
+                }                
+                "ip-range" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "dhcpiprange"
+                }
+                "members" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "virtualwanlinkmember"                     
                 }  
+                "neighbor" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "RouterNeighbor"                     
+                }
+                "network" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "RouterNetwork"                       
+                }             
+                "options" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "dhcpoptions"
+                }
+                "ospf-interface" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "ospfinterface"                    
+                }
+                "realservers" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "VIPrealservers"
+                    $RuleRealServer = $rule
+                }
+                "redistribute" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "routerredistribute"
+                    $Value = CleanupLine $ConfigLine
+                    $RouterRedistribute = InitRouterRedistribute
+                    $RouterRedistribute | Add-Member -MemberType NoteProperty -Name "Redistribute" -Value $Value -force
+                }
+                "reserved-address" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "dhcpreservedaddress"                 
+                }
                 "router" {
                     $RouterSection = $ConfigLineArray[2]
                     switch($ConfigLineArray[2]) {
@@ -1163,11 +1225,35 @@ foreach ($Line in $loadedConfig) {
                         }
                     }
                 }
+                "rule" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "RouterAccessListRule"                     
+                }
+                "service" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "virtualwanlinkservice"                     
+                }
+                "tagging" {
+                    $SUBSection = $true
+                    $SUBSectionConfig = "tagging"
+                }                
                 "system" {
                     switch($ConfigLineArray[2]) {
                         "dhcp" {
                             $ConfigSection = "ConfigSystemDHCP"
                             Write-Output "Config system dhcp line found."
+                        }
+                        "ddns" {
+                            $ConfigSection = "ConfigSystemDDNS"
+                            Write-Output "Config system ddns line found."
+                        }
+                        "dns-database" {
+                            $ConfigSection = "ConfigSystemDNSDatabase"
+                            Write-Output "Config system dns-database line found."
+                        }
+                        "dns-server" {
+                            $ConfigSection = "ConfigSystemDNSServer"
+                            Write-Output "Config system dns-server line found."
                         }
                         "global" {
                             $ConfigSection = "ConfigSystemGlobal"
@@ -1257,6 +1343,11 @@ foreach ($Line in $loadedConfig) {
                             $DHCPReservedAddress = InitDHCPReservedAddress
                             $IDNumber = GetNumber($Value)
                             $DHCPReservedAddress | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
+                        }
+                        "DNSEntry"  {
+                            $DNSEntry = InitSystemDNSEntry
+                            $IDNumber = GetNumber($Value)
+                            $DNSEntry | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force                            
                         }
                         "HA-MGMTInterfaces" {
                             $HAMGMTInterface = InitSystemHAMGMTInterfaces
@@ -1376,6 +1467,19 @@ foreach ($Line in $loadedConfig) {
                             $IDNumber = GetNumber($Value)
                             $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
+                        "ConfigSystemDDNS" {
+                            $rule = InitSystemDDNS
+                            $IDNumber = GetNumber($Value)
+                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force                            
+                        }
+                        "ConfigSystemDNSDatabase" {
+                            $rule = InitSystemDNSDatabase
+                            $rule | Add-Member -MemberType NoteProperty -Name "DNSname" -Value $Value -force 
+                        }
+                        "ConfigSystemDNSServer" {
+                            $rule = InitSystemDNSServer
+                            $rule | Add-Member -MemberType NoteProperty -Name "Interface" -Value $Value -force 
+                        }
                         "ConfigSystemLinkmonitor" {
                             $rule = InitSystemLinkMonitor
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
@@ -1447,6 +1551,9 @@ foreach ($Line in $loadedConfig) {
                         "dhcpreservedaddress" {
                             $DHCPReservedAddress | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }  
+                        "DNSEntry" {
+                            $DNSEntry | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                        }
                         "HA-MGMTInterfaces" {
                             $HAMGMTInterface | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
@@ -1593,6 +1700,9 @@ foreach ($Line in $loadedConfig) {
                         "dhcpreservedaddress" {
                             $DHCPReservedAddressArray += $DHCPReservedAddress
                         } 
+                        "DNSEntry" {
+                            $DNSEntryArray += $DNSEntry
+                        }
                         "HA-MGMTInterfaces" {
                             $HAMGMTInterfaceArray += $HAMGMTInterface
                         }
@@ -1747,6 +1857,18 @@ foreach ($Line in $loadedConfig) {
                             } 
                             $RouterAccessListArray = @()
                             $RouterRedistibuteArray = @()  
+                        }
+                        "ConfigSystemDDNS" {
+                            $rulelist = $rulelist | Sort-Object ID
+                            CreateExcelSheet "DDNS$VdomName" $rulelist                             
+                        }
+                        "ConfigSystemDNSDatabase" {
+                            $ruleList = $rulelist | Sort-Object DNSName
+                            CreateExcelSheetDNSDatabase
+                        }
+                        "ConfigSystemDNSServer" {
+                            $ruleList = $rulelist | Sort-Object interface
+                            CreateExcelSheet "DNSServer$VdomName" $rulelist 
                         }
                         "ConfigSystemGlobal" {
                             UpdateFirstSheet $rule
