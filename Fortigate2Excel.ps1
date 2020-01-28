@@ -1,13 +1,13 @@
 <#
 .SYNOPSIS
-Fortigate2Excel parses rules from a FortiGate device into a CSV file.
+Fortigate2Excel parses rules from a FortiGate device into a Excel file.
 .DESCRIPTION
-The Fortigate2Excel reads a FortiGate config file and pulls out the configuration for each VDOM in the file into excell.
+The Fortigate2Excel reads a FortiGate config file and pulls out the configuration for each VDOM in the file into excel.
 .PARAMETER fortigateConfig
 [REQUIRED] This is the path to the FortiGate config file
 .EXAMPLE
 .\Fortigate2Excel.ps1 -fortiGateConfig "c:\temp\config.conf"
-Parses a FortiGate config file and places the CSV file in the same folder where the config was found.
+Parses a FortiGate config file and places the Excel file in the same folder where the config was found.
 .NOTES
 Author: Xander Angenent
 Idea: Drew Hjelm (@drewhjelm) (creates csv of ruleset only)
@@ -20,19 +20,19 @@ Param
     $fortigateConfig
 )
 
-Function InitDHCPRange {
-    $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name ID -Value "" 
-    $InitRule | Add-Member -type NoteProperty -name "start-ip" -Value ""
-    $InitRule | Add-Member -type NoteProperty -name "end-ip" -Value ""  
-    return $InitRule
-}
 Function InitDHCPOptions {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value "" 
     $InitRule | Add-Member -type NoteProperty -name code -Value "" 
     $InitRule | Add-Member -type NoteProperty -name type -Value ""
     $InitRule | Add-Member -type NoteProperty -name value -Value ""  
+    return $InitRule
+}
+Function InitDHCPRange {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name "start-ip" -Value ""
+    $InitRule | Add-Member -type NoteProperty -name "end-ip" -Value ""  
     return $InitRule
 }
 Function InitDHCPReservedAddress {
@@ -134,7 +134,7 @@ Function InitFirewallServiceGroup {
     $InitRule | Add-Member -type NoteProperty -name Member -Value ""
     return $InitRule
 }
-Function InitFirewallShaperPeripshaper {
+Function InitFirewallShaperPerIpShaper {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name maximum-bandwith -Value ""
@@ -183,7 +183,7 @@ Function InitFirewallVIP {
     $InitRule | Add-Member -type NoteProperty -name type -Value ""
     #When using loadbalance this values are used
     #Setting ldb-method to none to indicate no loadbalance is done
-    #this gets overwritten is loadbalance is used
+    #this gets overwritten when loadbalance is used
     $InitRule | Add-Member -type NoteProperty -name ldb-method -Value "none"
     $InitRule | Add-Member -type NoteProperty -name ip -Value ""
     $InitRule | Add-Member -type NoteProperty -name port -Value ""
@@ -238,6 +238,15 @@ Function InitRouterNetwork {
     $InitRule | Add-Member -type NoteProperty -name prefix -Value "" 
     return $InitRule       
 }
+Function InitRouterOSPFInterface {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Interface -Value ""
+    $InitRule | Add-Member -type NoteProperty -name cost -Value ""
+    $InitRule | Add-Member -type NoteProperty -name dead-interval -Value ""
+    $InitRule | Add-Member -type NoteProperty -name hello-interval -Value ""
+    $InitRule | Add-Member -type NoteProperty -name network-type -Value ""
+    return $InitRule
+}
 Function InitRouterPolicy {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
@@ -250,15 +259,6 @@ Function InitRouterPolicy {
     $InitRule | Add-Member -type NoteProperty -name gateway -Value ""
     $InitRule | Add-Member -type NoteProperty -name output-device -Value ""
     $InitRule | Add-Member -type NoteProperty -name comments -Value ""
-    return $InitRule
-}
-Function InitRouterOSPFInterface {
-    $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name Interface -Value ""
-    $InitRule | Add-Member -type NoteProperty -name cost -Value ""
-    $InitRule | Add-Member -type NoteProperty -name dead-interval -Value ""
-    $InitRule | Add-Member -type NoteProperty -name hello-interval -Value ""
-    $InitRule | Add-Member -type NoteProperty -name network-type -Value ""
     return $InitRule
 }
 Function InitRouterRedistribute {
@@ -292,6 +292,23 @@ Function InitSystemDDNS {
     $InitRule | Add-Member -type NoteProperty -name monitor-interface -Value ""
        
 }
+Function InitSystemDHCP {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name "lease-time" -Value ""
+    $InitRule | Add-Member -type NoteProperty -name domain -Value ""
+    $InitRule | Add-Member -type NoteProperty -name "default-gateway" -Value "    "
+    $InitRule | Add-Member -type NoteProperty -name "timezone-option" -Value ""
+    $InitRule | Add-Member -type NoteProperty -name timezone -Value ""
+    $InitRule | Add-Member -type NoteProperty -name netmask -Value ""
+    $InitRule | Add-Member -type NoteProperty -name interface -Value ""
+    $InitRule | Add-Member -type NoteProperty -name "dns-server1" -Value ""
+    $InitRule | Add-Member -type NoteProperty -name "dns-server2" -Value ""
+    $InitRule | Add-Member -type NoteProperty -name "ntp-server1" -Value ""
+    $InitRule | Add-Member -type NoteProperty -Name "filename" -Value ""
+    $InitRule | Add-Member -type NoteProperty -Name status -Value "Enable"
+    return $InitRule
+}
 Function InitSystemDNSDatabase {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name authoritative -Value ""
@@ -312,10 +329,14 @@ Function InitSystemDNSDatabase {
 Function InitSystemDNSEntry {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name canonical -Value ""
     $InitRule | Add-Member -type NoteProperty -name hostname -Value ""
-    $InitRule | Add-Member -type NoteProperty -name type -Value ""
     $InitRule | Add-Member -type NoteProperty -name ip -Value ""
+    #$InitRule | Add-Member -type NoteProperty -name ipv6 -Value ""
+    $InitRule | Add-Member -type NoteProperty -name preference -Value "10"
     $InitRule | Add-Member -type NoteProperty -name status -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ttl -Value "0"
+    $InitRule | Add-Member -type NoteProperty -name type -Value ""
     return $InitRule     
 }
 Function InitSystemDNSServer {
@@ -325,23 +346,6 @@ Function InitSystemDNSServer {
     $InitRule | Add-Member -type NoteProperty -name mode -Value ""
     $InitRule | Add-Member -type NoteProperty -name dnsfilter-profile -Value ""
     return $InitRule 
-}
-Function InitSystemDHCP {
-    $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
-    $InitRule | Add-Member -type NoteProperty -name "lease-time" -Value ""
-    $InitRule | Add-Member -type NoteProperty -name domain -Value ""
-    $InitRule | Add-Member -type NoteProperty -name "default-gateway" -Value "    "
-    $InitRule | Add-Member -type NoteProperty -name "timezone-option" -Value ""
-    $InitRule | Add-Member -type NoteProperty -name timezone -Value ""
-    $InitRule | Add-Member -type NoteProperty -name netmask -Value ""
-    $InitRule | Add-Member -type NoteProperty -name interface -Value ""
-    $InitRule | Add-Member -type NoteProperty -name "dns-server1" -Value ""
-    $InitRule | Add-Member -type NoteProperty -name "dns-server2" -Value ""
-    $InitRule | Add-Member -type NoteProperty -name "ntp-server1" -Value ""
-    $InitRule | Add-Member -type NoteProperty -Name "filename" -Value ""
-    $InitRule | Add-Member -type NoteProperty -Name status -Value "Enable"
-    return $InitRule
 }
 Function InitSystemGlobal {
     $InitRule = New-Object System.Object;
@@ -439,6 +443,14 @@ Function InitSystemLinkMonitor {
     $InitRule | Add-Member -type NoteProperty -name update-static-route -Value ""    
     return $InitRule
 }
+Function InitSystemSessionHelper {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name protocol -Value ""
+    $InitRule | Add-Member -type NoteProperty -name port -Value ""
+    return $InitRule
+}
 Function InitSystemSettings {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name inspection-mode -Value ""
@@ -448,14 +460,6 @@ Function InitSystemSettings {
     $InitRule | Add-Member -type NoteProperty -name gui-ips -Value "Disable"
     $InitRule | Add-Member -type NoteProperty -name sip-helper -Value "Disable"
     $InitRule | Add-Member -type NoteProperty -name gui-explicit-proxy -Value "Disable"
-    return $InitRule
-}
-Function InitSystemSessionHelper {
-    $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
-    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
-    $InitRule | Add-Member -type NoteProperty -name protocol -Value ""
-    $InitRule | Add-Member -type NoteProperty -name port -Value ""
     return $InitRule
 }
 Function InitSystemVirtualWanLink {
@@ -529,7 +533,7 @@ Function InitVirtualWanLinkService {
     $InitRule | Add-Member -type NoteProperty -name src -Value ""
     return $InitRule  
 }
-Function InitVpnipsecphase1 {
+Function InitVpnIpsecPhase1 {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name type -Value ""
@@ -557,7 +561,7 @@ Function InitVpnipsecphase1 {
     $InitRule | Add-Member -type NoteProperty -name psksecret -Value ""
     return $InitRule
 }
-Function InitVpnipsecphase2 {
+Function InitVpnIpsecPhase2 {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name phase1name -Value ""

@@ -4,5 +4,5 @@ Works with Excel Office365
 Usage .\Fortigate2Excel Configfile
 .\fortigate2Excel c:\forticonfig\config.conf
 
-Foreach section that is found a new Tab will be created.
+For each section that is found a new Tab will be created.
 It is VDOM aware.
