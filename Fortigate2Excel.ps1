@@ -4,15 +4,19 @@ Fortigate2Excel parses rules from a FortiGate device into a Excel file.
 .DESCRIPTION
 The Fortigate2Excel reads a FortiGate config file and pulls out the configuration for each VDOM in the file into excel.
 .PARAMETER fortigateConfig
-[REQUIRED] This is the path to the FortiGate config file
+[REQUIRED] This is the path to the FortiGate config/credential file
 .EXAMPLE
 .\Fortigate2Excel.ps1 -fortiGateConfig "c:\temp\config.conf"
 Parses a FortiGate config file and places the Excel file in the same folder where the config was found.
+.\Fortigate2Excel.ps1 -fortiGateConfig "c:\temp\config.cred"
+Parses a saved credential file and places the Excel file in the same folder where the file was found.
+If the credential file does not exist you will be prompted for the information and the file is created
 .NOTES
 Author: Xander Angenent
 Idea: Drew Hjelm (@drewhjelm) (creates csv of ruleset only)
-Last Modified: 18/12/19
+Last Modified: 2020/02/04
 #Estimated completion time from http://mylifeismymessage.net/1672/
+#Uses Posh-SSH https://github.com/darkoperator/Posh-SSH if reading directly from the firewall
 #>
 Param
 (
@@ -537,6 +541,7 @@ Function InitVpnIpsecPhase1 {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name type -Value ""
+    $InitRule | Add-Member -type NoteProperty -name keylife "86400"
     $InitRule | Add-Member -type NoteProperty -name interface -Value ""
     $InitRule | Add-Member -type NoteProperty -name peertype -Value ""
     $InitRule | Add-Member -type NoteProperty -name proposal -Value ""
@@ -548,6 +553,7 @@ Function InitVpnIpsecPhase1 {
     $InitRule | Add-Member -type NoteProperty -name ike-version -Value "1"
     $InitRule | Add-Member -type NoteProperty -name nattraversal -Value "enabled"
     $InitRule | Add-Member -type NoteProperty -name remote-gw -Value ""
+    $InitRule | Add-Member -type NoteProperty -name remotegw-ddns -Value ""
     $InitRule | Add-Member -type NoteProperty -name peerid -Value ""
     $InitRule | Add-Member -type NoteProperty -name authusrgrp -Value ""
     $InitRule | Add-Member -type NoteProperty -name ipv4-end-ip -Value ""
@@ -570,7 +576,7 @@ Function InitVpnIpsecPhase2 {
     $InitRule | Add-Member -type NoteProperty -name replay -Value "enable"
     $InitRule | Add-Member -type NoteProperty -name auto-negotiate -Value ""
     $InitRule | Add-Member -type NoteProperty -name comments -Value ""
-    $InitRule | Add-Member -type NoteProperty -name keylifeseconds -Value ""
+    $InitRule | Add-Member -type NoteProperty -name keylifeseconds -Value "43200"
     #default has no data in config setting src-subnet to 0.0.0.0/0 it gets overwritten if needed
     $InitRule | Add-Member -type NoteProperty -name src-subnet -Value "0.0.0.0/0"
     $InitRule | Add-Member -type NoteProperty -name src-name -Value ""
@@ -957,6 +963,33 @@ Function GetSubnetCIDRPolicy ($SubnetCIDRPolicy) {
     $ReturnGetSubnetCIDRPolicy = GetSubnetCIDR $SubnetCIDRPolicyArray[0] $SubnetCIDRPolicyArray[1]
     return $ReturnGetSubnetCIDRPolicy
 }
+# Utility function that turns unquoted, space-separated strings into an array.
+# It means you can write "MakeArray foo bar baz" rather than "@('foo', 'bar', 'baz')".
+Function MakeArray { $args }
+Function ParseConfigFile {
+    Param([array]$requiredValues, [string]$PconfigFile) 
+   
+    $config = @{}
+    if (-not (Test-Path -PathType Leaf $PconfigFile)) {
+     Write-CustomOut "Fatal error: File $PconfigFile not found. Processing aborted."
+     exit 1       
+    }
+    Get-Content $PconfigFile | Where-Object { $_ -match '\S' } | # Skip blank (whitespace only) lines.
+     Foreach-Object { $key, $value = $_ -split '\s*;\s*'; $config.$key = $value 
+    }
+    #$requiredValues = MakeArray VCenterIP VCenterNaam VCUser VCPassword 
+    # Initialize this to false and exit after the loop if a required value is missing.
+    [bool] $missingRequiredValue = $false
+    foreach ($requiredValue in $requiredValues) {
+     if (-not $config.ContainsKey($requiredValue)) {
+      Write-CustomOut "Error: Missing '$requiredValue'. Processing will be aborted."
+      $missingRequiredValue = $true
+     }
+    } 
+    # Exit the program if a required value is missing in the configuration file.
+    if ($missingRequiredValue) { exit 2 }
+    $config
+   }
 Function UpdateFirstSheet ( $ActiveArray ) {
     $FirstSheet.Cells.Item(2,1) = 'Excel Creation Date'
     $FirstSheet.Cells.Item(2,2) = $Date
@@ -994,16 +1027,7 @@ Function UpdateFirstSheet ( $ActiveArray ) {
 }
 
 #Start MAIN Script
-if (!( Test-Path "$fortigateConfig" )) {
-    Write-Output "[!] ERROR: Could not find FortiGate config file at $fortigateConfig."
-    exit 1
-}
-$TimeZoneFilePath = Get-ScriptDirectory
-if (Test-Path "$TimeZoneFilePath\TimeZones.csv") {
-    $TimeZoneArray = Import-CSV "$TimeZoneFilePath\TimeZones.csv" -delimiter ";"
-}
-else { $TimeZoneArray = $null}
-$startTime = get-date 
+$StartTime = get-date 
 Clear-Host
 Write-Output "Started script"
 #Clear 5 additional lines for the progress bar
@@ -1012,15 +1036,103 @@ DO {
     Write-output ""
     $I++
 } While ($i -le 5)
-$loadedConfig = Get-Content $fortigateConfig
+$SetOutputStandard = 'config system console
+set output standard
+end
+'
+$SetOutputMore = 'config system console
+set output more
+end
+'
+$FortigateConfigArray = $fortigateConfig.Split(".")
+Switch ($FortigateConfigArray[$FortigateConfigArray.Count-1]) {
+    "cred" {
+        if (Get-Module -ListAvailable -Name Posh-SSH) {
+            $LoadedModules = Get-Module | Select-Object Name
+            if (!$LoadedModules -like "*Posh-SSH*") {Import-Module Posh-SSH}
+        } 
+        else {
+            Write-Output "Module Posh-SSH does not exist"
+            Write-Output "Download it from https://github.com/darkoperator/Posh-SSH"
+            exit 1
+        }
+        Write-Output "Reading credentialfile"
+        if (!(Test-Path($fortigateConfig))) {
+            Write-Output "Credential file does not exist -> Creating One"
+            $FirewallIP = Read-Host "Enter FirewallIP or DNS name"
+            $Credential = Get-Credential "Enter Firewall credentials "
+            $FWUser = $Credential.UserName
+            $FWPassword = $Credential.password | ConvertFrom-SecureString
+            $ConfigString = @"
+#Firewall Credential File
+FirewallIP;$FirewallIP
+FWUser;$FWUser
+FWPassword;$FWPassword
+  
+"@
+            $ConfigString | Set-Content $fortigateConfig
+        }
+        $RequiredConfigValues = MakeArray FirewallIP FWUser FWPassword
+        $config = ParseConfigFile $RequiredConfigValues $fortigateConfig
+        $FirewallIP = $config.FirewallIP
+        $FWPassword = $config.FWPassword | ConvertTo-SecureString 
+        $Credential = New-Object System.Management.Automation.PsCredential($config.FWUser,$FWPassword)
+        Import-Module "J:\Mijn Drive\PowerShell\Posh-SSH\Posh-SSH.psd1"
+        $SSHSession = New-SSHSession -ComputerName $FirewallIP -Credential $Credential
+        If ($SSHSession.Connected -eq $True) {
+            Write-Output "Reading configuration from Firewall."
+            $AnswerCommand = Invoke-SSHCommand -Index 0 -Command "show system console"
+            $ConfigStandard = $AnswerCommand.Output.Contains("standard")
+            if (!$ConfigStandard) {
+                Write-Output "Fortigate is in default (more) configuration setting this to standard."
+                $AnswerCommand = Invoke-SSHCommand -Index 0 -Command $SetOutputStandard
+            }
+            $Answer = Invoke-SSHCommand -Index 0 -Command "show"
+            $loadedConfig = $Answer.Output
+            If (!$ConfigStandard) {
+                Write-Output "Restore the more setting."
+                $AnswerCommand = Invoke-SSHCommand -Index 0 -Command $SetOutputMore
+            }
+            $Answer = Remove-SSHSession -Index 0 
+            $SSHConfig = $true
+        }
+        else { 
+            Write-Output "Error connecting to $FirewallIP!"
+            exit 1
+        }
+    }
+    "conf" {
+        if (!( Test-Path "$fortigateConfig" )) {
+            Write-Output "[!] ERROR: Could not find FortiGate config file at $fortigateConfig."
+            exit 1
+        }
+        $loadedConfig = Get-Content $fortigateConfig
+     }
+     default {
+        Write-Output "Extention needs to be .conf for a configfile OR .cred for a credential file!"
+        exit 1
+    }
+} 
+$TimeZoneFilePath = Get-ScriptDirectory
+if (Test-Path "$TimeZoneFilePath\TimeZones.csv") {
+    $TimeZoneArray = Import-CSV "$TimeZoneFilePath\TimeZones.csv" -delimiter ";"
+}
+else { $TimeZoneArray = $null}
 $Counter=0
 $MaxCounter=$loadedConfig.count
 $date = Get-Date -Format yyyyMMddHHmm
 $WorkingFolder = (Get-Item $fortigateConfig).DirectoryName
 $FileName = (Get-Item $fortigateConfig).Basename
-$configdateArray=$Filename.Split("_")
-$configdate = $configdateArray[$configdateArray.Count-2] + $configdateArray[$configdateArray.Count-1]
-$ExcelFullFilePad = "$workingFolder\$fileName"
+if ($SSHConfig) {
+    $configdate = $date
+    $ExcelFullFilePad = "$workingFolder\$fileName-$ConfigDate"
+}
+else {
+    $configdateArray=$Filename.Split("_")
+    $configdate = $configdateArray[$configdateArray.Count-2] + $configdateArray[$configdateArray.Count-1]
+    $ExcelFullFilePad = "$workingFolder\$fileName"
+}
+
 $Excel = New-Object -ComObject Excel.Application
 $Excel.Visible = $false
 $workbook = $excel.Workbooks.Add()
