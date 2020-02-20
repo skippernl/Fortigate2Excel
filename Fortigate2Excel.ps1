@@ -14,10 +14,11 @@ If the credential file does not exist you will be prompted for the information a
 .NOTES
 Author: Xander Angenent
 Idea: Drew Hjelm (@drewhjelm) (creates csv of ruleset only)
-Last Modified: 2020/02/04
+Last Modified: 2020/02/20
 #Estimated completion time from http://mylifeismymessage.net/1672/
 #Uses Posh-SSH https://github.com/darkoperator/Posh-SSH if reading directly from the firewall
 #>
+#20200220 Table of Contents Added
 Param
 (
     [Parameter(Mandatory = $true)]
@@ -355,6 +356,7 @@ Function InitSystemGlobal {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name admin-sport -Value "443"
     $InitRule | Add-Member -type NoteProperty -name admin-server-cert -Value "Selfsigned"
+    $InitRule | Add-Member -type NoteProperty -name admin-telnet -Value "enable"
     $InitRule | Add-Member -type NoteProperty -name admintimeout -Value ""
     $InitRule | Add-Member -type NoteProperty -name alias -Value "    "
     $initRule | Add-Member -type NoteProperty -name compliance-check -Value ""
@@ -708,8 +710,9 @@ Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
 }
 Function CreateExcelSheet ($SheetName, $SheetArray) {
     if ($SheetArray) {
-        $row = 1
+        $row = 2
         $Sheet = $workbook.Worksheets.Add()
+        PlaceLinkToToC $Sheet
         $Sheet.Name = $SheetName
         $Column = 1
         #Keeping Visual Studio happy
@@ -720,9 +723,10 @@ Function CreateExcelSheet ($SheetName, $SheetArray) {
     }
 }
 Function CreateExcelSheetDHCP {
-    $row = 1
+    $row = 2
     $Sheet = $workbook.Worksheets.Add()
-    $SheetName = "DHCP-" + $rule.Interface + "-" + $rule.ID
+    PlaceLinkToToC $Sheet
+    $SheetName = "DHCP_" + $rule.Interface + "_" + $rule.ID
     $Sheet.Name = $SheetName
     $Column=1
     $excel.cells.item($row,$Column) = "Normal DHCP options"
@@ -756,8 +760,9 @@ Function CreateExcelSheetDHCP {
     $UsedRange.EntireColumn.AutoFit() | Out-Null    
 }
 Function CreateExcelSheetDNSDatabase {
-    $row = 1
+    $row = 2
     $Sheet = $workbook.Worksheets.Add()
+    PlaceLinkToToC $Sheet
     $SheetName = "DNSDatabase$VdomName"
     $Sheet.Name = $SheetName
     $Column=1
@@ -779,8 +784,9 @@ Function CreateExcelSheetDNSDatabase {
 Function CreateExcelSheetHA {
     #If group-name is empty HA is not active and this excel tab would be useless
     if ($rule."group-name" -ne "") {
-        $row = 1
+        $row = 2
         $Sheet = $workbook.Worksheets.Add()
+        PlaceLinkToToC $Sheet
         $SheetName = "HA$VdomName"
         $Sheet.Name = $SheetName
         $Column = 1   
@@ -797,8 +803,9 @@ Function CreateExcelSheetHA {
     }
 }
 Function CreateExcelSheetVirtualWanLink {
-    $row = 1
+    $row = 2
     $Sheet = $workbook.Worksheets.Add()
+    PlaceLinkToToC $Sheet
     $SheetName = "Virtual-Wan-Link"
     $Sheet.Name = $SheetName
     $Column=1
@@ -836,9 +843,10 @@ Function CreateExcelSheetVirtualWanLink {
 Function CreateExcelSheetBGP {
     #If BGP is not used AS = none then this sheet does not need to be created
     if ($Rule."as" -ne "none") {
-        $row = 1
+        $row = 2
         $Sheet = $workbook.Worksheets.Add()
-        $SheetName = "Router-$RouterSection$VdomName"
+        PlaceLinkToToC $Sheet
+        $SheetName = "Router_$RouterSection$VdomName"
         $Sheet.Name = $SheetName
         $Column = 1   
         $row = CreateExcelTabel $Sheet $rule
@@ -870,9 +878,10 @@ Function CreateExcelSheetBGP {
 Function CreateExcelSheetOSPF {
     #id $OSPFRouterID is "no-ospf" it has not been overwritten and OSPF is not used -> Do not create the sheet.
     if ($OSPFRouterID -ne "no-ospf") {
-        $row = 1
+        $row = 2
         $Sheet = $workbook.Worksheets.Add()
-        $SheetName = "Router-$RouterSection$VdomName"
+        PlaceLinkToToC $Sheet
+        $SheetName = "Router_$RouterSection$VdomName"
         $Sheet.Name = $SheetName
         $Column=1    
         $excel.cells.item($row,$Column) = "Router ID"
@@ -989,18 +998,28 @@ Function ParseConfigFile {
     # Exit the program if a required value is missing in the configuration file.
     if ($missingRequiredValue) { exit 2 }
     $config
-   }
-Function UpdateFirstSheet ( $ActiveArray ) {
-    $FirstSheet.Cells.Item(2,1) = 'Excel Creation Date'
-    $FirstSheet.Cells.Item(2,2) = $Date
-    $FirstSheet.Cells.Item(2,2).numberformat = "00"
-    $FirstSheet.Cells.Item(3,1) = 'Config Creation Date'
-    $FirstSheet.Cells.Item(3,2) = $ConfigDate 
-    $FirstSheet.Cells.Item(3,2).numberformat = "00"                       
-    $FirstSheet.Cells.Item(4,1) = 'Type'
-    $FirstSheet.Cells.Item(4,2) = $FWType
-    $FirstSheet.Cells.Item(5,1) = 'Version'
-    $FirstSheet.Cells.Item(5,2) = $FWVersion  
+ }
+ Function  PlaceLinkToToC ($CurrentSheet) {
+    $CurrentSheet.Cells.Item(1,1) = "Table of Contents"
+    $CurrentSheet.Hyperlinks.Add(
+        $CurrentSheet.Cells.Item(1,1),
+        "",
+        "ToC!A1",
+        "Return to table of contents",
+        $CurrentSheet.Cells.Item(1,1).Text
+    ) | Out-Null
+}
+Function UpdateMainSheet ( $ActiveArray ) {
+    $MainSheet.Cells.Item(2,1) = 'Excel Creation Date'
+    $MainSheet.Cells.Item(2,2) = $Date
+    $MainSheet.Cells.Item(2,2).numberformat = "00"
+    $MainSheet.Cells.Item(3,1) = 'Config Creation Date'
+    $MainSheet.Cells.Item(3,2) = $ConfigDate 
+    $MainSheet.Cells.Item(3,2).numberformat = "00"                       
+    $MainSheet.Cells.Item(4,1) = 'Type'
+    $MainSheet.Cells.Item(4,2) = $FWType
+    $MainSheet.Cells.Item(5,1) = 'Version'
+    $MainSheet.Cells.Item(5,2) = $FWVersion  
     $NoteProperties = $ActiveArray | get-member -Type NoteProperty
     $Row = 6
     $Column = 1
@@ -1024,6 +1043,19 @@ Function UpdateFirstSheet ( $ActiveArray ) {
             $Row++
         }                        
     }                         
+}
+
+Function UpdateToC ($CurrentSheetName) {
+    $TocSheet.Cells.Item($TocRow,1) = $CurrentSheetName
+    $TocSheet.Hyperlinks.Add(
+        $TocSheet.Cells.Item($TocRow,1),
+        "",
+        "$CurrentSheetName!A1",
+        "Link to $CurrentSheetName",
+        $TocSheet.Cells.Item($TocRow,1).Text
+    ) | Out-Null
+    $TocRow++
+    return $TocRow
 }
 
 #Start MAIN Script
@@ -1136,7 +1168,15 @@ else {
 $Excel = New-Object -ComObject Excel.Application
 $Excel.Visible = $false
 $workbook = $excel.Workbooks.Add()
-$FirstSheet = $workbook.Worksheets.Item(1) 
+$TocSheet = $workbook.Worksheets.Item(1) 
+$MainSheet = $workbook.Worksheets.Add()
+$TocSheet.Name = "ToC"
+$TocRow=2
+$TocSheet.Cells.Item(1,1)= 'Table of Contents'
+$MergeCells = $TocSheet.Range("A1:C1")
+#$MergeCells.Select() | out-null
+$MergeCells.MergeCells = $true
+ChangeFontExcelCell $TocSheet 1 1
 if ($Filename.Length -gt 31) {
     Write-output "Sheetname cannot be longer that 32 caracters shorting name to fit."
     $SheetName = $FileName.Substring(0,31)
@@ -1144,12 +1184,15 @@ if ($Filename.Length -gt 31) {
 else {
     $Sheetname = $FileName
 }
-$FirstSheet.Name = $SheetName
-$FirstSheet.Cells.Item(1,1)= 'Fortigate Configuration'
-$MergeCells = $FirstSheet.Range("A1:G1")
+#Table of Contents does not like the - Char in the sheet name
+$SheetName = $SheetName.Replace("-","_")
+$MainSheet.Name = $SheetName
+PlaceLinkToToC $MainSheet
+$MainSheet.Cells.Item(2,1)= 'Fortigate Configuration'
+$MergeCells = $MainSheet.Range("A2:B2")
 $MergeCells.Select() | out-null
 $MergeCells.MergeCells = $true
-ChangeFontExcelCell $FirstSheet 1 1
+ChangeFontExcelCell $MainSheet 2 1
 $FirstLine = $loadedConfig[0]
 $FirstLineArray = $FirstLine.Split(":")
 $FirewallInfoArray = $FirstLineArray[0].Split("-")
@@ -1904,15 +1947,15 @@ foreach ($Line in $loadedConfig) {
                     switch ($ConfigSection) {
                         "ConfigFirewallPolicy" { 
                             $rulelist = $rulelist | Sort-Object ID
-                            CreateExcelSheet "IPV4-Rules$VdomName" $rulelist  
+                            CreateExcelSheet "IPV4_Rules$VdomName" $rulelist  
                         }
                         "ConfigFirewallAddress" { 
                             $rulelist = $rulelist | Sort-Object Name
-                            CreateExcelSheet "IPV4-Addresses$VdomName" $rulelist  
+                            CreateExcelSheet "IPV4_Addresses$VdomName" $rulelist  
                         }
                         "ConfigFirewallAddrgrp" { 
                             $rulelist = $rulelist | Sort-Object Name
-                            CreateExcelSheet "IPV4-AddressGRP$VdomName" $rulelist  
+                            CreateExcelSheet "IPV4_AddressGRP$VdomName" $rulelist  
                         }
                         "ConfigFirewallIPpool" {
                             $rulelist = $rulelist | Sort-Object Name
@@ -1920,11 +1963,11 @@ foreach ($Line in $loadedConfig) {
                         }
                         "ConfigFirewallLdbMonitor" {
                             $rulelist = $rulelist | Sort-Object Name
-                            CreateExcelSheet "Ldb-Monitor$VdomName" $ruleList                            
+                            CreateExcelSheet "Ldb_Monitor$VdomName" $ruleList                            
                         }
                         "ConfigFirewallServiceCategory" { 
                             $rulelist = $rulelist | Sort-Object Name
-                            CreateExcelSheet "Services-Category$VdomName" $rulelist  
+                            CreateExcelSheet "Services_Category$VdomName" $rulelist  
                         }
                         "ConfigFirewallServiceCustom" { 
                             $rulelist = $rulelist | Sort-Object Name
@@ -1932,7 +1975,7 @@ foreach ($Line in $loadedConfig) {
                         }
                         "ConfigFirewallServiceGroup" { 
                             $rulelist = $rulelist | Sort-Object Name
-                            CreateExcelSheet "Services-Group$VdomName" $rulelist  
+                            CreateExcelSheet "Services_Group$VdomName" $rulelist  
                         }
                         "ConfigFirwallShaperPerIPShaper" {
                             $rulelist = $rulelist | Sort-Object Name
@@ -1952,13 +1995,13 @@ foreach ($Line in $loadedConfig) {
                         }                        
                         "ConfigRouterAccessList" {
                             $RouterAccessListArray = $RouterAccessListArray | Sort-Object Name,ID
-                            CreateExcelSheet "Router-AccesList$vdomName" $RouterAccessListArray
+                            CreateExcelSheet "Router_AccesList$vdomName" $RouterAccessListArray
                         }
                         "ConfigRouter$RouterSection" {
                             switch ($ConfigSection) {
                                 "ConfigRouterStatic" { 
                                     $rulelist = $rulelist | Sort-Object ID
-                                    CreateExcelSheet "Router-Static$VdomName" $rulelist 
+                                    CreateExcelSheet "Router_Static$VdomName" $rulelist 
                                 }
                                 "ConfigRouterBGP" {
                                     CreateExcelSheetBGP                                    
@@ -1968,7 +2011,7 @@ foreach ($Line in $loadedConfig) {
                                 }
                                 "ConfigRouterPolicy" { 
                                     $rulelist = $rulelist | Sort-Object ID
-                                    CreateExcelSheet "Router-Policy$VdomName" $rulelist 
+                                    CreateExcelSheet "Router_Policy$VdomName" $rulelist 
                                 }
                             } 
                             $RouterAccessListArray = @()
@@ -1987,8 +2030,8 @@ foreach ($Line in $loadedConfig) {
                             CreateExcelSheet "DNSServer$VdomName" $rulelist 
                         }
                         "ConfigSystemGlobal" {
-                            UpdateFirstSheet $rule
-                            $UsedRange = $FirstSheet.usedRange                  
+                            UpdateMainSheet $rule
+                            $UsedRange = $MainSheet.usedRange                  
                             $UsedRange.EntireColumn.AutoFit() | Out-Null
                         }
                         "ConfigSystemHA" {
@@ -2000,14 +2043,14 @@ foreach ($Line in $loadedConfig) {
                             CreateExcelSheet "Interfaces$VdomName" $rulelist                 
                         }
                         "ConfigSystemLinkmonitor" {
-                            CreateExcelSheet "Link-Monitor$VdomName" $rulelist                         
+                            CreateExcelSheet "LinkMonitor$VdomName" $rulelist                         
                         }
                         "ConfigSystemSettings" {
                             CreateExcelSheet "SystemSettings$VdomName" $ruleList
                         }
                         "ConfigSystemSessionHelper" {
                             $ruleList = $ruleList | Sort-Object ID
-                            CreateExcelSheet "Session-Helper$VdomName" $ruleList
+                            CreateExcelSheet "Session_Helper$VdomName" $ruleList
                         }
                         "ConfigSystemVirtualWanLink" {
                             CreateExcelSheetVirtualWanLink
@@ -2018,23 +2061,23 @@ foreach ($Line in $loadedConfig) {
                         }
                         "ConfigUsergroup" {
                             $rulelist = $rulelist | Sort-Object Name
-                            CreateExcelSheet "User-Group$VdomName" $ruleList
+                            CreateExcelSheet "UserGroup$VdomName" $ruleList
                         }
                         "ConfigUserLdap" {
                             $rulelist = $rulelist | Sort-Object Name
-                            CreateExcelSheet "User-Ldap$VdomName" $rulelist                             
+                            CreateExcelSheet "UserLdap$VdomName" $rulelist                             
                         }
                         "ConfigUserLocal" {
                             $rulelist = $rulelist | Sort-Object Name
-                            CreateExcelSheet "User-Local$VdomName" $rulelist                         
+                            CreateExcelSheet "UserLocal$VdomName" $rulelist                         
                         }
                         "Configvpnipsecphase1" { 
                             $rulelist = $rulelist | Sort-Object Name
-                            CreateExcelSheet "VPN-Phase1$VdomName" $rulelist 
+                            CreateExcelSheet "VPN_Phase1$VdomName" $rulelist 
                         }
                         "Configvpnipsecphase2" { 
                             $rulelist = $rulelist | Sort-Object Name
-                            CreateExcelSheet "VPN-Phase2$VdomName" $rulelist 
+                            CreateExcelSheet "VPN_Phase2$VdomName" $rulelist 
                         }
                     }        
                     $ConfigSection = $null
@@ -2045,8 +2088,14 @@ foreach ($Line in $loadedConfig) {
         }    
     }
 }    
-#make sure that the first sheet that is opened by Excel is the global sheet.
-$FirstSheet.Activate()
+#make sure that the first sheet that is opened by Excel is the Table of Content sheet.
+$TocSheet.Activate()
+Write-Output "Creating Table of Contents"
+for ($ExcelSheetNumber=1; $ExcelSheetNumber -le $workbook.Sheets.Count; $ExcelSheetNumber++) {
+    $TocRow = UpdateToc  $workbook.Worksheets.Item($ExcelSheetNumber).Name
+}
+$UsedRange = $TocSheet.usedRange                  
+$UsedRange.EntireColumn.AutoFit() | Out-Null     
 Write-Output "Writing Excelfile $ExcelFullFilePad.xls"
 $workbook.SaveAs($ExcelFullFilePad)
 $excel.Quit()
