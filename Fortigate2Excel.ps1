@@ -713,6 +713,7 @@ Function CreateExcelSheet ($SheetName, $SheetArray) {
         $row = 2
         $Sheet = $workbook.Worksheets.Add()
         PlaceLinkToToC $Sheet
+        $SheetName = $SheetName.Replace("-","_")
         $Sheet.Name = $SheetName
         $Column = 1
         #Keeping Visual Studio happy
@@ -727,6 +728,7 @@ Function CreateExcelSheetDHCP {
     $Sheet = $workbook.Worksheets.Add()
     PlaceLinkToToC $Sheet
     $SheetName = "DHCP_" + $rule.Interface + "_" + $rule.ID
+    $SheetName = $SheetName.Replace("-","_")
     $Sheet.Name = $SheetName
     $Column=1
     $excel.cells.item($row,$Column) = "Normal DHCP options"
@@ -765,6 +767,7 @@ Function CreateExcelSheetDNSDatabase {
     PlaceLinkToToC $Sheet
     $SheetName = "DNSDatabase$VdomName"
     $Sheet.Name = $SheetName
+    $SheetName = $SheetName.Replace("-","_")
     $Column=1
     $excel.cells.item($row,$Column) = "DNSDatabase"
     ChangeFontExcelCell $Sheet $row $Column
@@ -788,6 +791,7 @@ Function CreateExcelSheetHA {
         $Sheet = $workbook.Worksheets.Add()
         PlaceLinkToToC $Sheet
         $SheetName = "HA$VdomName"
+        $SheetName = $SheetName.Replace("-","_")
         $Sheet.Name = $SheetName
         $Column = 1   
         $row = CreateExcelTabel $Sheet $rule
@@ -806,7 +810,7 @@ Function CreateExcelSheetVirtualWanLink {
     $row = 2
     $Sheet = $workbook.Worksheets.Add()
     PlaceLinkToToC $Sheet
-    $SheetName = "Virtual-Wan-Link"
+    $SheetName = "Virtual_Wan_Link"
     $Sheet.Name = $SheetName
     $Column=1
     $excel.cells.item($row,$Column) = "Global Virtual Wan Link settings"
@@ -847,6 +851,7 @@ Function CreateExcelSheetBGP {
         $Sheet = $workbook.Worksheets.Add()
         PlaceLinkToToC $Sheet
         $SheetName = "Router_$RouterSection$VdomName"
+        $SheetName = $SheetName.Replace("-","_")
         $Sheet.Name = $SheetName
         $Column = 1   
         $row = CreateExcelTabel $Sheet $rule
@@ -882,6 +887,7 @@ Function CreateExcelSheetOSPF {
         $Sheet = $workbook.Worksheets.Add()
         PlaceLinkToToC $Sheet
         $SheetName = "Router_$RouterSection$VdomName"
+        $SheetName = $SheetName.Replace("-","_")
         $Sheet.Name = $SheetName
         $Column=1    
         $excel.cells.item($row,$Column) = "Router ID"
