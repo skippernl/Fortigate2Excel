@@ -2100,7 +2100,9 @@ Write-Output "Creating Table of Contents"
 for ($ExcelSheetNumber=1; $ExcelSheetNumber -le $workbook.Sheets.Count; $ExcelSheetNumber++) {
     $TocRow = UpdateToc  $workbook.Worksheets.Item($ExcelSheetNumber).Name
 }
-$UsedRange = $TocSheet.usedRange                  
+$UsedRange = $TocSheet.usedRange 
+$SortRange = $TocSheet.Range("A2")  
+[void] $UsedRange.Sort($SortRange,1,$null,$null,1,$null,1,1)              
 $UsedRange.EntireColumn.AutoFit() | Out-Null     
 Write-Output "Writing Excelfile $ExcelFullFilePad.xls"
 $workbook.SaveAs($ExcelFullFilePad)
