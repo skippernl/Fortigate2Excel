@@ -90,27 +90,34 @@ Function InitFirewallLdbMonitor {
 Function InitFirewallRule {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
-    $InitRule | Add-Member -type NoteProperty -name Type -Value ""
-    $InitRule | Add-Member -type NoteProperty -name UUID -Value ""
-    $InitRule | Add-Member -type NoteProperty -name srcintf -Value ""
-    $InitRule | Add-Member -type NoteProperty -name dstintf -Value ""
-    $InitRule | Add-Member -type NoteProperty -name srcaddr -Value ""
-    $InitRule | Add-Member -type NoteProperty -name dstaddr -Value ""
     $InitRule | Add-Member -type NoteProperty -name action -Value ""
-    $InitRule | Add-Member -type NoteProperty -name schedule -Value ""
-    $InitRule | Add-Member -type NoteProperty -name utm-status -Value ""
-    $InitRule | Add-Member -type NoteProperty -name logtraffic -Value ""
-    $InitRule | Add-Member -type NoteProperty -name av-profile -Value ""
-    $InitRule | Add-Member -type NoteProperty -name ips-sensor -Value ""
-    $InitRule | Add-Member -type NoteProperty -name profile-protocol-options -Value ""
-    $InitRule | Add-Member -type NoteProperty -name ssl-ssh-profile -Value ""
     $InitRule | Add-Member -type NoteProperty -name application-list -Value ""
+    $InitRule | Add-Member -type NoteProperty -name av-profile -Value ""
+    $InitRule | Add-Member -type NoteProperty -name comments -Value ""
+    $InitRule | Add-Member -type NoteProperty -name dstaddr -Value ""
+    $InitRule | Add-Member -type NoteProperty -name dstintf -Value ""
+    #Default is disable
+    $InitRule | Add-Member -type NoteProperty -name ippool -Value "disable"
+    $InitRule | Add-Member -type NoteProperty -name ips-sensor -Value ""
+    $InitRule | Add-Member -type NoteProperty -name logtraffic -Value ""
     #Default is disable
     $InitRule | Add-Member -type NoteProperty -name nat -Value "disable"
-    $InitRule | Add-Member -type NoteProperty -name status -Value "enable"
-    $InitRule | Add-Member -type NoteProperty -name webfilter-profile -Value ""
     $InitRule | Add-Member -type NoteProperty -name poolname -Value ""
-    $InitRule | Add-Member -type NoteProperty -name comments -Value ""
+    $InitRule | Add-Member -type NoteProperty -name profile-protocol-options -Value ""
+    $InitRule | Add-Member -type NoteProperty -name schedule -Value ""
+    $InitRule | Add-Member -type NoteProperty -name service -Value ""
+    $InitRule | Add-Member -type NoteProperty -name srcaddr -Value ""
+    $InitRule | Add-Member -type NoteProperty -name srcintf -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ssl-ssh-profile -Value ""
+    #Default is enable
+    $InitRule | Add-Member -type NoteProperty -name status -Value "enable"
+    $InitRule | Add-Member -type NoteProperty -name traffic-shaper -Value ""
+    $InitRule | Add-Member -type NoteProperty -name traffic-shaper-reverse -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Type -Value ""
+    $InitRule | Add-Member -type NoteProperty -name utm-status -Value ""
+    $InitRule | Add-Member -type NoteProperty -name UUID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name webfilter-profile -Value ""
+    
     return $InitRule
 }
 Function InitFirewallServiceCategory {
