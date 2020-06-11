@@ -324,6 +324,14 @@ Function InitRouterStatic {
     $InitRule | Add-Member -type NoteProperty -name virtual-wan-link -Value ""
     return $InitRule
 }
+Function InitSystemAdmin {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name accprofile -Value ""
+    $InitRule | Add-Member -type NoteProperty -name vdom -Value ""
+    $InitRule | Add-Member -type NoteProperty -name trustedhosts -Value ""
+    return $InitRule 
+}
 Function InitSystemDDNS {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
@@ -331,7 +339,7 @@ Function InitSystemDDNS {
     $InitRule | Add-Member -type NoteProperty -name ddns-server -Value ""
     $InitRule | Add-Member -type NoteProperty -name use-public-ip -Value "disable"
     $InitRule | Add-Member -type NoteProperty -name monitor-interface -Value ""
-       
+    return $InitRule 
 }
 Function InitSystemDHCP {
     $InitRule = New-Object System.Object;
@@ -1393,7 +1401,11 @@ foreach ($Line in $loadedConfig) {
                             Write-Output "Config firewall vip line found."
                         }                 
                     }
-                }                 
+                }  
+                "Gui-dashboard" {
+                    $SUBSection = $true
+                    $SUBSectionConfig = "Gui-Dashboard"
+                }               
                 "ha-mgmt-interfaces" {
                     $SUBSection = $true
                     $SUBSectionConfig = "HA-MGMTInterfaces"
@@ -1486,6 +1498,10 @@ foreach ($Line in $loadedConfig) {
                 }                
                 "system" {
                     switch($ConfigLineArray[2]) {
+                        "admin" {
+                            $ConfigSection = "ConfigSystemAdmin"
+                            Write-Output "Config system admin line found."                            
+                        }
                         "dhcp" {
                             $ConfigSection = "ConfigSystemDHCP"
                             Write-Output "Config system dhcp (IPV4) line found."
@@ -1595,6 +1611,10 @@ foreach ($Line in $loadedConfig) {
                         }
                     }
                 }
+                "widget" {
+                    $SUBSection2 = $True
+                    $SUBSection2Config = "widget"
+                }
             }
         }
         "edit" {
@@ -1621,6 +1641,12 @@ foreach ($Line in $loadedConfig) {
                             $DNSEntry = InitSystemDNSEntry
                             $IDNumber = GetNumber($Value)
                             $DNSEntry | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force                            
+                        }
+                        "Gui-Dashboard" {
+                            if ($SubSection2) {
+                                #Do nothing not implemented
+                            }
+                            #Do nothing not implemented
                         }
                         "HA-MGMTInterfaces" {
                             $HAMGMTInterface = InitSystemHAMGMTInterfaces
@@ -1682,16 +1708,21 @@ foreach ($Line in $loadedConfig) {
                     }
                 }
                 else {
-                    switch ($ConfigSection) {             
+                    switch ($ConfigSection) {       
+                        "ConfigSystemAdmin" {
+                            $rule = InitSystemAdmin
+                            $TrustedHosts = ""
+                            $rule | Add-Member -MemberType NoteProperty -Name Name -Value $Value -force
+                        }      
                         "ConfigSystemDHCP" {
                             $rule = InitSystemDHCP
                             $IDNumber = GetNumber($Value)
-                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber  -force
+                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }  
                         "ConfigSystemDHCP6" {
                             $rule = InitSystemDHCP
                             $IDNumber = GetNumber($Value)
-                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber  -force
+                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }                                                  
                         "ConfigVDOM" {
                             #look for vdom name 
@@ -1844,6 +1875,12 @@ foreach ($Line in $loadedConfig) {
                         "DNSEntry" {
                             $DNSEntry | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
+                        "Gui-Dashboard" {
+                            if ($SubSection2) {
+                                #Do nothing not implemented
+                            }
+                            #Do nothing not implemented
+                        }
                         "HA-MGMTInterfaces" {
                             $HAMGMTInterface | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
@@ -1866,7 +1903,7 @@ foreach ($Line in $loadedConfig) {
                         "RouterAccessListRule" {
                             if ($ConfigLineArray[1] -eq "prefix") {
                                 if ($ConfigLineArray[2] -eq "any") { $Value = "0.0.0.0/0" } 
-                                else { $Value = $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3] }
+                                else { $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3] }
                                 $RouterAccessList | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                             }
                             else { $RouterAccessList | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force }
@@ -1927,6 +1964,18 @@ foreach ($Line in $loadedConfig) {
                         "ConfigSystemDHCP" {  
                             $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force 
                         }  
+                        "ConfigSystemAdmin" {
+                            if ($ConfigLineArray[1].StartsWith("trusthost")) {
+                                $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3]
+                                if ($TrustedHosts) {
+                                    $TrustedHosts = $TrustedHosts + "," + $Value
+                                }
+                                else { $TrustedHosts = $Value }
+                            }
+                            else { 
+                                $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $ConfigLineArray[2] -force
+                            }
+                        }
                         "ConfigSystemHA" {
                             if ($ConfigLineArray[1] -eq "hbdev") { $Value = ConvertHaInterfaces $Value }
                             $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force                             
@@ -2003,6 +2052,12 @@ foreach ($Line in $loadedConfig) {
                         "DNSEntry" {
                             $DNSEntryArray += $DNSEntry
                         }
+                        "Gui-Dashboard" {
+                            if ($SubSection2) {
+                                #Do nothing not implemented
+                            }
+                            #Do nothing not implemented
+                        }
                         "HA-MGMTInterfaces" {
                             $HAMGMTInterfaceArray += $HAMGMTInterface
                         }
@@ -2044,6 +2099,11 @@ foreach ($Line in $loadedConfig) {
                 }
                 else {   
                     switch ($ConfigSection) {
+                        "ConfigSystemAdmin" {
+                            $Rule.TrustedHosts = $TrustedHosts
+                            $ruleList += $rule
+                            $TrustedHosts = "" 
+                        }
                         "ConfigSystemDHCP" {
                             $DHCPIP4=$true
                             CreateExcelSheetDHCP
@@ -2070,21 +2130,26 @@ foreach ($Line in $loadedConfig) {
         }                 
         "end" {
             if ($SUBSection) {
-                Switch ($SUBSectionConfig) {
-                    "tagging" {
-                        $Value = ConvertTagArrayToLine $ObjectTagArray
-                        $rule | Add-Member -MemberType NoteProperty -Name tag -Value $Value -force
-                        $ObjectTagArray = @()
-                    }                    
+                if ($SubSection2) {
+                    $SubSection2 = $False
                 }
-                $SUBSection = $False
-                switch ($ConfigSection) {
-                    "routerredistribute" { 
-                        $RouterRedistibuteArray += $RouterRedistribute 
+                else {
+                    Switch ($SUBSectionConfig) {
+                        "tagging" {
+                            $Value = ConvertTagArrayToLine $ObjectTagArray
+                            $rule | Add-Member -MemberType NoteProperty -Name tag -Value $Value -force
+                            $ObjectTagArray = @()
+                        }                    
                     }
-                    "VIPRealservers" {
-                        $ruleList += $rule
-                    } 
+                    $SUBSection = $False
+                    switch ($ConfigSection) {
+                        "routerredistribute" { 
+                            $RouterRedistibuteArray += $RouterRedistribute 
+                        }
+                        "VIPRealservers" {
+                            $ruleList += $rule
+                        } 
+                    }
                 } 
             }
             else {            
@@ -2093,7 +2158,7 @@ foreach ($Line in $loadedConfig) {
                         $VdomName = "-" + $vdom
                     }
                     else { $VdomName = "" }
-                    switch ($ConfigSection) {
+                    switch ($ConfigSection) {  
                         "ConfigFirewallPolicy" { 
                             $rulelist = $rulelist | Sort-Object ID
                             CreateExcelSheet "IPV4_Rules$VdomName" $rulelist  
@@ -2178,6 +2243,9 @@ foreach ($Line in $loadedConfig) {
                             $RouterAccessListArray = @()
                             $RouterRedistibuteArray = @()  
                         }
+                        "ConfigSystemAdmin"  {
+                            CreateExcelSheet "AdminUsers$VdomName" $rulelist 
+                        } 
                         "ConfigSystemDDNS" {
                             $rulelist = $rulelist | Sort-Object ID
                             CreateExcelSheet "DDNS$VdomName" $rulelist                             
