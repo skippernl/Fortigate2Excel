@@ -50,20 +50,49 @@ Function InitDHCPReservedAddress {
 }
 Function InitFirewallAddress {
     $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name associated-interface -Value ""
+    $InitRule | Add-Member -type NoteProperty -name country -Value ""
+    $InitRule | Add-Member -type NoteProperty -name End-IP -Value ""
+    $InitRule | Add-Member -type NoteProperty -name FQDN -Value ""
+    $InitRule | Add-Member -type NoteProperty -name name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name network -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Start-IP -Value ""
+    $InitRule | Add-Member -type NoteProperty -name tag -Value ""
+    $InitRule | Add-Member -type NoteProperty -name type -Value ""
+    $InitRule | Add-Member -type NoteProperty -name UUID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name visibility -Value ""
+    $InitRule | Add-Member -type NoteProperty -name wildcard-fqdn -Value ""
+    
+    return $InitRule
+}
+Function InitFirewallAddress6 {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Associated-interface -Value ""
+    $InitRule | Add-Member -type NoteProperty -name comment -Value ""
+    $InitRule | Add-Member -type NoteProperty -name country -Value ""
+    $InitRule | Add-Member -type NoteProperty -name End-IP -Value ""
+    $InitRule | Add-Member -type NoteProperty -name FQDN -Value ""
+    #default ::/0
+    $InitRule | Add-Member -type NoteProperty -name ip6 -Value "::/0"
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Network -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Start-IP -Value ""
+    $InitRule | Add-Member -type NoteProperty -name tag -Value ""
     $InitRule | Add-Member -type NoteProperty -name Type -Value ""
     $InitRule | Add-Member -type NoteProperty -name UUID -Value ""
     $InitRule | Add-Member -type NoteProperty -name Visibility -Value ""
-    $InitRule | Add-Member -type NoteProperty -name Associated-interface -Value ""
-    $InitRule | Add-Member -type NoteProperty -name Start-IP -Value ""
-    $InitRule | Add-Member -type NoteProperty -name End-IP -Value ""
-    $InitRule | Add-Member -type NoteProperty -name Network -Value ""
     $InitRule | Add-Member -type NoteProperty -name Wildcard-fqdn -Value ""
-    $InitRule | Add-Member -type NoteProperty -name FQDN -Value ""
-    $InitRule | Add-Member -type NoteProperty -name tag -Value ""
+    
     return $InitRule
 }
 Function InitFirewallAddressGroup {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Member -Value ""
+    $InitRule | Add-Member -type NoteProperty -name UUID -Value ""
+    return $InitRule
+}
+Function InitFirewallAddressGroup6 {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name Member -Value ""
@@ -410,32 +439,33 @@ Function InitSystemHAMGMTInterfaces {
     $InitRule | Add-Member -type NoteProperty -name gateway -Value ""
     return $InitRule
 }
-Function InitSytemInterface {
+Function InitSystemInterface {
     $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
-    $InitRule | Add-Member -type NoteProperty -name vdom -Value ""
-    $InitRule | Add-Member -type NoteProperty -name type -Value ""
-    $InitRule | Add-Member -type NoteProperty -name snmp-index -Value ""
-    $InitRule | Add-Member -type NoteProperty -name ip -Value ""
-    $InitRule | Add-Member -type NoteProperty -name allowaccess -Value ""
-    $InitRule | Add-Member -type NoteProperty -name explicit-web-proxy -Value ""
     $InitRule | Add-Member -type NoteProperty -name alias -Value ""
-    $InitRule | Add-Member -type NoteProperty -name fortiheartbeat -Value ""
-    $InitRule | Add-Member -type NoteProperty -name role -Value ""
-    $InitRule | Add-Member -type NoteProperty -name secondary-IP -Value ""
-    $InitRule | Add-Member -type NoteProperty -name scan-botnet-connections -Value ""
-    $InitRule | Add-Member -type NoteProperty -name estimated-upstream-bandwidth -Value ""
-    $InitRule | Add-Member -type NoteProperty -name estimated-downstream-bandwidth -Value ""
+    $InitRule | Add-Member -type NoteProperty -name allowaccess -Value ""
     $InitRule | Add-Member -type NoteProperty -name description -Value ""
     $InitRule | Add-Member -type NoteProperty -name dedicated-to -Value ""
-    $InitRule | Add-Member -type NoteProperty -name mode -Value ""
-    $InitRule | Add-Member -type NoteProperty -name remote-IP -Value ""
-    $InitRule | Add-Member -type NoteProperty -name status -Value ""
+    $InitRule | Add-Member -type NoteProperty -name estimated-downstream-bandwidth -Value ""
+    $InitRule | Add-Member -type NoteProperty -name estimated-upstream-bandwidth -Value ""
+    $InitRule | Add-Member -type NoteProperty -name explicit-web-proxy -Value ""
+    $InitRule | Add-Member -type NoteProperty -name fortiheartbeat -Value ""
     $InitRule | Add-Member -type NoteProperty -name interface -Value ""
-    $InitRule | Add-Member -type NoteProperty -name vlanid -Value ""
-    $InitRule | Add-Member -type NoteProperty -name mtu-override -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ip -Value ""
+    $InitRule | Add-Member -type NoteProperty -name mode -Value ""
     $InitRule | Add-Member -type NoteProperty -name mtu -Value ""
+    $InitRule | Add-Member -type NoteProperty -name mtu-override -Value ""
+    $InitRule | Add-Member -type NoteProperty -name name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name remote-IP -Value ""
+    $InitRule | Add-Member -type NoteProperty -name role -Value ""
+    $InitRule | Add-Member -type NoteProperty -name scan-botnet-connections -Value ""
+    $InitRule | Add-Member -type NoteProperty -name secondary-IP -Value ""
+    $InitRule | Add-Member -type NoteProperty -name status -Value ""
     $InitRule | Add-Member -type NoteProperty -name stp -Value ""
+    $InitRule | Add-Member -type NoteProperty -name snmp-index -Value ""
+    $InitRule | Add-Member -type NoteProperty -name type -Value ""
+    $InitRule | Add-Member -type NoteProperty -name vdom -Value ""
+    $InitRule | Add-Member -type NoteProperty -name vlanid -Value ""
+    
     return $InitRule
 }
 Function InitSystemLinkMonitor {
@@ -597,6 +627,36 @@ Function InitVpnIpsecPhase2 {
     $InitRule | Add-Member -type NoteProperty -name pfs -Value "enable"
     return $InitRule
 }
+
+Function InitVPNSSLWebPortal {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""   
+    $InitRule | Add-Member -type NoteProperty -name ipv6-tunnel-mode -Value "disable" 
+    $InitRule | Add-Member -type NoteProperty -name ip-pools -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name ipv6-pools -Value ""
+    $InitRule | Add-Member -type NoteProperty -name tunnel-mode -Value "disable" 
+    $InitRule | Add-Member -type NoteProperty -name web-mode -Value "disable" 
+    return $InitRule   
+}
+
+Function InitVPNSSLSettings {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name default-portal -Value ""   
+    $InitRule | Add-Member -type NoteProperty -name dns-server1 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name dns-server2 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name dns-suffix -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name idle-timeout -Value "600"
+    $InitRule | Add-Member -type NoteProperty -name port -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name tunnel-ip-pools -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name tunnel-ipv6-pools -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name servercert  -Value ""
+    $InitRule | Add-Member -type NoteProperty -name source-address  -Value ""
+    $InitRule | Add-Member -type NoteProperty -name source-address6  -Value ""  
+    $InitRule | Add-Member -type NoteProperty -name source-interface  -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ssl-min-proto-ver tls1-1
+    return $InitRule   
+}
+
 Function CleanupLine ($LineToCleanUp) {
     $LineToCleanUp = $LineToCleanUp.TrimStart()
     $LineToCleanUpArray = $LineToCleanUp.Split('`"')
@@ -734,7 +794,9 @@ Function CreateExcelSheetDHCP {
     $row = 2
     $Sheet = $workbook.Worksheets.Add()
     PlaceLinkToToC $Sheet
-    $SheetName = "DHCP_" + $rule.Interface + "_" + $rule.ID
+    if ($DHCPIP4) { $SheetName = "DHCP_IPV4_" }
+    else { $SheetName = "DHCP_IPV6_" }
+    $SheetName = $SheetName + $rule.Interface + "_" + $rule.ID
     $SheetName = $SheetName.Replace("-","_")
     $Sheet.Name = $SheetName
     $Column=1
@@ -749,14 +811,16 @@ Function CreateExcelSheetDHCP {
         $row++     
         $row = CreateExcelTabel $Sheet $DHCPOptionsArray   
     }
-    #Add IP ranges
-    $Column=1
-    $excel.cells.item($row,$Column) = "DHCP Range"
-    ChangeFontExcelCell $Sheet $row $Column
-    $row++
-    $DHCPRangeArray = $DHCPRangeArray | Sort-Object ID 
-    $row = CreateExcelTabel $Sheet $DHCPRangeArray
-    $row++ 
+    if ($DHCPRangeArray) {
+        #Add IP ranges
+        $Column=1
+        $excel.cells.item($row,$Column) = "DHCP Range"
+        ChangeFontExcelCell $Sheet $row $Column
+        $row++
+        $DHCPRangeArray = $DHCPRangeArray | Sort-Object ID 
+        $row = CreateExcelTabel $Sheet $DHCPRangeArray
+        $row++ 
+    }
     $Column=1
     if ($DHCPReservedAddressArray) {
         $excel.cells.item($row,$Column) = "Reserved Addresses"
@@ -1180,6 +1244,9 @@ else {
 
 $Excel = New-Object -ComObject Excel.Application
 $Excel.Visible = $false
+$excel.ScreenUpdating = $false
+$excel.DisplayStatusBar = $false
+$excel.EnableEvents = $false
 $workbook = $excel.Workbooks.Add()
 $TocSheet = $workbook.Worksheets.Item(1) 
 $MainSheet = $workbook.Worksheets.Add()
@@ -1267,12 +1334,20 @@ foreach ($Line in $loadedConfig) {
                         }
                         "address" { 
                             $ConfigSection = "ConfigFirewallAddress" 
-                            Write-Output "Config firewall address line found."
+                            Write-Output "Config firewall address (IPV4) line found."
                         }
+                        "address6" { 
+                            $ConfigSection = "ConfigFirewallAddress6" 
+                            Write-Output "Config firewall address (IPV6) line found."
+                        }                        
                         "addrgrp" { 
                             $ConfigSection = "ConfigFirewallAddrgrp" 
-                            Write-Output "Config firewall addgrp line found."
-                        }   
+                            Write-Output "Config firewall addgrp (IPV4) line found."
+                        } 
+                        "addrgrp6" { 
+                            $ConfigSection = "ConfigFirewallAddrgrp6" 
+                            Write-Output "Config firewall addgrp (IPV6) line found."
+                        }                           
                         "ldb-monitor" {
                             $ConfigSection = "ConfigFirewallLdbMonitor"
                             Write-Output "Config firewall ldb-monitor line found."
@@ -1413,8 +1488,12 @@ foreach ($Line in $loadedConfig) {
                     switch($ConfigLineArray[2]) {
                         "dhcp" {
                             $ConfigSection = "ConfigSystemDHCP"
-                            Write-Output "Config system dhcp line found."
+                            Write-Output "Config system dhcp (IPV4) line found."
                         }
+                        "dhcp6" {
+                            $ConfigSection = "ConfigSystemDHCP6"
+                            Write-Output "Config system dhcp (IPV6) line found."
+                        }                        
                         "ddns" {
                             $ConfigSection = "ConfigSystemDDNS"
                             Write-Output "Config system ddns line found."
@@ -1466,7 +1545,7 @@ foreach ($Line in $loadedConfig) {
                     } 
                 }  
                 "user" { 
-                    switch($ConfigLineArray[2]) {
+                    switch ($ConfigLineArray[2]) {
                         "group" {
                             $ConfigSection = "ConfigUsergroup"
                             Write-Output "Config user group line found."
@@ -1483,14 +1562,36 @@ foreach ($Line in $loadedConfig) {
                 }        
                 "vdom" { $ConfigSection = "ConfigVDOM" }
                 "vpn" {
-                    switch($ConfigLineArray[3]) {
-                        "phase1-interface" {
-                            $ConfigSection = "Configvpnipsecphase1"
-                            Write-Output "Config vpn ipsec phase1-interface line found."
+                    switch ($ConfigLineArray[2]) {
+                        "ipsec" {
+                            switch ($ConfigLineArray[3]) {
+                                "phase1-interface" {
+                                    $ConfigSection = "Configvpnipsecphase1"
+                                    Write-Output "Config vpn ipsec phase1-interface line found."
+                                 }
+                                "phase2-interface" {
+                                    $ConfigSection = "Configvpnipsecphase2"
+                                    Write-Output "Config vpn ipsec phase2-interface line found."
+                                }
+                            }
                         }
-                        "phase2-interface" {
-                            $ConfigSection = "Configvpnipsecphase2"
-                            Write-Output "Config vpn ipsec phase2-interface line found."
+                        "ssl" {
+                            switch($ConfigLineArray[3]) {
+                                "settings" {
+                                    $ConfigSection = "ConfigvpnsslSettings"
+                                    Write-Output "Config vpn ssl settings line found."
+                                    $rule = InitVPNSSLSettings
+                                }
+                                "web" {
+                                    switch($ConfigLineArray[4]) {
+                                        "portal" {
+                                            $ConfigSection = "Configvpnsslwebportal"
+                                            Write-Output "Config vpn ssl web portal line found."
+                                        }
+                                    }
+
+                                }
+                            }
                         }
                     }
                 }
@@ -1586,7 +1687,12 @@ foreach ($Line in $loadedConfig) {
                             $rule = InitSystemDHCP
                             $IDNumber = GetNumber($Value)
                             $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber  -force
-                        }                          
+                        }  
+                        "ConfigSystemDHCP6" {
+                            $rule = InitSystemDHCP
+                            $IDNumber = GetNumber($Value)
+                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber  -force
+                        }                                                  
                         "ConfigVDOM" {
                             #look for vdom name 
                             $vdom = $ConfigLineArray[1]
@@ -1609,10 +1715,18 @@ foreach ($Line in $loadedConfig) {
                             $rule = InitFirewallAddress
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
                         }
+                        "ConfigFirewallAddress6" {
+                            $rule = InitFirewallAddress6
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
+                        }                        
                         "ConfigFirewallAddrgrp" {
                             $rule = InitFirewallAddressGroup
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
                         } 
+                        "ConfigFirewallAddrgrp6" {
+                            $rule = InitFirewallAddressGroup6
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
+                        }                         
                         "ConfigFirwallShaperPerIPShaper" {
                             $rule = InitFirewallshaperperipshaper
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
@@ -1657,7 +1771,7 @@ foreach ($Line in $loadedConfig) {
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
                         }
                         "ConfigSystemInterface" {
-                            $rule = InitSytemInterface
+                            $rule = InitSystemInterface
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
                         }
                         "ConfigSystemSessionHelper" {
@@ -1666,7 +1780,7 @@ foreach ($Line in $loadedConfig) {
                             $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
                         "ConfigSystemZone" {
-                            $rule = InitSytemInterface
+                            $rule = InitSystemInterface
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force                            
                         }
                         "ConfigUsergroup" {
@@ -1705,6 +1819,10 @@ foreach ($Line in $loadedConfig) {
                             $rule = Initvpnipsecphase2
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
                         } 
+                        "Configvpnsslwebportal" {
+                            $rule = InitVPNSSLWebPortal
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
+                        }                        
                     }
                 }
             }
@@ -1791,6 +1909,16 @@ foreach ($Line in $loadedConfig) {
                                 $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3] 
                                 $rule | Add-Member -MemberType NoteProperty -Name "Type" -Value $ConfigLineArray[1] -force
                                 $rule | Add-Member -MemberType NoteProperty -Name "Network" -Value $Value -force
+                            }
+                            else {
+                                $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                            } 
+                        }
+                        "ConfigFirewallAddress6" {
+                            if ($ConfigLineArray[1] -eq "start-ip") {
+                                #$Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3] 
+                                $rule | Add-Member -MemberType NoteProperty -Name "start-ip" -Value $ConfigLineArray[2] -force
+                                $rule | Add-Member -MemberType NoteProperty -Name "ipv6" -Value "" -force
                             }
                             else {
                                 $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
@@ -1917,11 +2045,19 @@ foreach ($Line in $loadedConfig) {
                 else {   
                     switch ($ConfigSection) {
                         "ConfigSystemDHCP" {
+                            $DHCPIP4=$true
                             CreateExcelSheetDHCP
                             $DHCPRangeArray = @()
                             $DHCPOptionsArray = @()
                             $DHCPReservedAddressArray = @()
                         }
+                        "ConfigSystemDHCP6" {
+                            $DHCPIP4=$false
+                            CreateExcelSheetDHCP
+                            $DHCPRangeArray = @()
+                            $DHCPOptionsArray = @()
+                            $DHCPReservedAddressArray = @()
+                        }                        
                         "ConfigFirewallVIP"  {
                             if ($SUBSectionConfig -ne "VIPRealservers") {
                                 $ruleList += $rule 
@@ -1966,10 +2102,18 @@ foreach ($Line in $loadedConfig) {
                             $rulelist = $rulelist | Sort-Object Name
                             CreateExcelSheet "IPV4_Addresses$VdomName" $rulelist  
                         }
+                        "ConfigFirewallAddress6" { 
+                            $rulelist = $rulelist | Sort-Object Name
+                            CreateExcelSheet "IPV6_Addresses$VdomName" $rulelist  
+                        }                        
                         "ConfigFirewallAddrgrp" { 
                             $rulelist = $rulelist | Sort-Object Name
                             CreateExcelSheet "IPV4_AddressGRP$VdomName" $rulelist  
                         }
+                        "ConfigFirewallAddrgrp6" { 
+                            $rulelist = $rulelist | Sort-Object Name
+                            CreateExcelSheet "IPV6_AddressGRP$VdomName" $rulelist  
+                        }                        
                         "ConfigFirewallIPpool" {
                             $rulelist = $rulelist | Sort-Object Name
                             CreateExcelSheet "IPpool$VdomName" $ruleList
@@ -2014,8 +2158,12 @@ foreach ($Line in $loadedConfig) {
                             switch ($ConfigSection) {
                                 "ConfigRouterStatic" { 
                                     $rulelist = $rulelist | Sort-Object ID
-                                    CreateExcelSheet "Router_Static$VdomName" $rulelist 
+                                    CreateExcelSheet "IPV4_Router_Static$VdomName" $rulelist 
                                 }
+                                "ConfigRouterStatic6" { 
+                                    $rulelist = $rulelist | Sort-Object ID
+                                    CreateExcelSheet "IPV6_Router_Static$VdomName" $rulelist 
+                                }                                
                                 "ConfigRouterBGP" {
                                     CreateExcelSheetBGP                                    
                                 }
@@ -2092,6 +2240,14 @@ foreach ($Line in $loadedConfig) {
                             $rulelist = $rulelist | Sort-Object Name
                             CreateExcelSheet "VPN_Phase2$VdomName" $rulelist 
                         }
+                        "Configvpnsslsettings" {
+                            $ruleList += $rule
+                            CreateExcelSheet "VPN_SSLSettings$VdomName" $rulelist   
+                        }
+                        "Configvpnsslwebportal" {
+                            $rulelist = $rulelist | Sort-Object Name
+                            CreateExcelSheet "VPN_SSLWebportal$VdomName" $rulelist                       
+                        }
                     }        
                     $ConfigSection = $null
                     $ruleList = @()
@@ -2112,6 +2268,9 @@ $SortRange = $TocSheet.Range("A2")
 [void] $UsedRange.Sort($SortRange,1,$null,$null,1,$null,1,1)              
 $UsedRange.EntireColumn.AutoFit() | Out-Null     
 Write-Output "Writing Excelfile $ExcelFullFilePad.xls"
+$excel.ScreenUpdating = $true
+$excel.DisplayStatusBar = $true
+$excel.EnableEvents = $true
 $workbook.SaveAs($ExcelFullFilePad)
 $excel.Quit()
 $elapsedTime = $(get-date) - $startTime
