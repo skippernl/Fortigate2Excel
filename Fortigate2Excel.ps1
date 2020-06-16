@@ -1166,16 +1166,16 @@ Switch ($FortigateConfigArray[$FortigateConfigArray.Count-1]) {
     "cred" {
         if (Get-Module -ListAvailable -Name Posh-SSH) {
             $LoadedModules = Get-Module | Select-Object Name
-            if (!$LoadedModules -like "*Posh-SSH*") {Import-Module Posh-SSH}
+            if (!$LoadedModules -like "*Posh-SSH*") { Import-Module Posh-SSH }
         } 
         else {
-            Write-Output "Module Posh-SSH does not exist"
+            Write-Output "Module Posh-SSH does not exist!"
             Write-Output "Download it from https://github.com/darkoperator/Posh-SSH"
             exit 1
         }
         Write-Output "Reading credentialfile"
         if (!(Test-Path($fortigateConfig))) {
-            Write-Output "Credential file does not exist -> Creating One"
+            Write-Output "Credential file does not exist -> Creating One."
             $FirewallIP = Read-Host "Enter FirewallIP or DNS name"
             $Credential = Get-Credential "Enter Firewall credentials "
             $FWUser = $Credential.UserName
@@ -1194,7 +1194,6 @@ FWPassword;$FWPassword
         $FirewallIP = $config.FirewallIP
         $FWPassword = $config.FWPassword | ConvertTo-SecureString 
         $Credential = New-Object System.Management.Automation.PsCredential($config.FWUser,$FWPassword)
-        Import-Module "J:\Mijn Drive\PowerShell\Posh-SSH\Posh-SSH.psd1"
         $SSHSession = New-SSHSession -ComputerName $FirewallIP -Credential $Credential
         If ($SSHSession.Connected -eq $True) {
             Write-Output "Reading configuration from Firewall."
@@ -1234,7 +1233,11 @@ $TimeZoneFilePath = Get-ScriptDirectory
 if (Test-Path "$TimeZoneFilePath\TimeZones.csv") {
     $TimeZoneArray = Import-CSV "$TimeZoneFilePath\TimeZones.csv" -delimiter ";"
 }
-else { $TimeZoneArray = $null}
+else { 
+    $TimeZoneArray = $null
+    Write-Output "Could not find Timezones.csv in $TimeZoneFilePath."
+    Write-Output "Script will continue, ID will be used instead of time-zone name."
+}
 $Counter=0
 $MaxCounter=$loadedConfig.count
 $date = Get-Date -Format yyyyMMddHHmm
@@ -1262,7 +1265,6 @@ $TocSheet.Name = "ToC"
 $TocRow=2
 $TocSheet.Cells.Item(1,1)= 'Table of Contents'
 $MergeCells = $TocSheet.Range("A1:C1")
-#$MergeCells.Select() | out-null
 $MergeCells.MergeCells = $true
 ChangeFontExcelCell $TocSheet 1 1
 if ($Filename.Length -gt 31) {
@@ -1321,7 +1323,7 @@ foreach ($Line in $loadedConfig) {
     $ConfigLineArray = $Configline.Split(" ")    
     switch($ConfigLineArray[0]) {
         "config" {
-              switch($ConfigLineArray[1]) {
+            switch($ConfigLineArray[1]) {
                 "area" {
                     $SUBSection = $True
                     $SUBSectionConfig = "ospfarea"                      
@@ -1574,7 +1576,7 @@ foreach ($Line in $loadedConfig) {
                             $ConfigSection = "ConfigUserLocal"
                             Write-Output "Config user local line found."                           
                         }
-                    }
+                    }   # switch ($ConfigLineArray[2])
                 }        
                 "vdom" { $ConfigSection = "ConfigVDOM" }
                 "vpn" {
@@ -1607,16 +1609,15 @@ foreach ($Line in $loadedConfig) {
                                     }
 
                                 }
-                            }
-                        }
-                    }
+                            }   # switch($ConfigLineArray[3])
+                        }   # ssl
+                    }   # switch ($ConfigLineArray[2])
                 }
                 "widget" {
                     $SUBSection2 = $True
-                    $SUBSection2Config = "widget"
                 }
-            }
-        }
+            }   # switch($ConfigLineArray[1])
+        }   # "config"
         "edit" {
             if ($ConfigSection) { 
                 $Value = CleanupLine $ConfigLine
@@ -1705,8 +1706,8 @@ foreach ($Line in $loadedConfig) {
                             $IDNumber = GetNumber($Value)
                             $VirtualWanLinkService | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force                            
                         }
-                    }
-                }
+                    }   # Switch ($SUBSectionConfig)
+                }   # if ($SUBSection)
                 else {
                     switch ($ConfigSection) {       
                         "ConfigSystemAdmin" {
@@ -1854,10 +1855,10 @@ foreach ($Line in $loadedConfig) {
                             $rule = InitVPNSSLWebPortal
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
                         }                        
-                    }
-                }
-            }
-        }
+                    }   # switch ($ConfigSection)
+                }   # else if ($SUBSection)
+            }   # if ($ConfigSection)
+        }   # "next"
         "set" {
             if ($ConfigSection) {
                 $Value = CleanupLine $ConfigLine
@@ -1938,7 +1939,7 @@ foreach ($Line in $loadedConfig) {
                             $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }               
                     }
-                }
+                }   # if ($SUBSection)
                 else {
                     switch ($ConfigSection) {   
                         "ConfigFirewallAddress" {
@@ -2032,10 +2033,10 @@ foreach ($Line in $loadedConfig) {
                         default {
                             $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
-                    } 
-                }       
-            }
-        }
+                    }   # switch ($ConfigSection)
+                }   # else if ($SUBSection)    
+            }   # if ($ConfigSection)
+        }   # "set"
         "next" {
             if ($ConfigSection) {   
                 if ($SUBSection) {
@@ -2095,8 +2096,8 @@ foreach ($Line in $loadedConfig) {
                         default {
                             $rulelist += $rule
                         }                   
-                    }
-                }
+                    }   # Switch ($SUBSectionConfig)
+                }   #if ($SUBSection)
                 else {   
                     switch ($ConfigSection) {
                         "ConfigSystemAdmin" {
@@ -2124,10 +2125,10 @@ foreach ($Line in $loadedConfig) {
                             }
                         }
                         Default { $ruleList += $rule }
-                    }   
-                }
-            }
-        }                 
+                    }   # switch ($ConfigSection)  
+                }   # else if ($SUBSection)
+            }   # if ($ConfigSection)
+        }    # "next"             
         "end" {
             if ($SUBSection) {
                 if ($SubSection2) {
@@ -2151,7 +2152,7 @@ foreach ($Line in $loadedConfig) {
                         } 
                     }
                 } 
-            }
+            } # if ($SUBSection)
             else {            
                 if ($ConfigSection) {
                     if ($vdom) { 
@@ -2316,15 +2317,15 @@ foreach ($Line in $loadedConfig) {
                             $rulelist = $rulelist | Sort-Object Name
                             CreateExcelSheet "VPN_SSLWebportal$VdomName" $rulelist                       
                         }
-                    }        
+                    }   # switch ($ConfigSection)     
                     $ConfigSection = $null
                     $ruleList = @()
                     Write-Output "Section done."
-                }
-            }
-        }    
-    }
-}    
+                } # if ($ConfigSection)
+            } # else if ($SUBSection)
+        }    # "end"
+    } # switch($ConfigLineArray[0])
+}    # foreach ($Line in $loadedConfig)
 #make sure that the first sheet that is opened by Excel is the Table of Content sheet.
 $TocSheet.Activate()
 Write-Output "Creating Table of Contents"
