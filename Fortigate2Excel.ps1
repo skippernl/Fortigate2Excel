@@ -281,6 +281,7 @@ Function InitRouterNetwork {
 }
 Function InitRouterOSPFInterface {
     $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name Interface -Value ""
     $InitRule | Add-Member -type NoteProperty -name cost -Value ""
     $InitRule | Add-Member -type NoteProperty -name dead-interval -Value ""
@@ -1153,10 +1154,12 @@ DO {
     Write-output ""
     $I++
 } While ($i -le 5)
+#Command to disable the more prompt when reading the fortigate configuration
 $SetOutputStandard = 'config system console
 set output standard
 end
 '
+#Command to restore the more prompt when reading the fortigate configuration
 $SetOutputMore = 'config system console
 set output more
 end
@@ -1183,9 +1186,9 @@ Switch ($FortigateConfigArray[$FortigateConfigArray.Count-1]) {
             $FWUser = $Credential.UserName
             $FWPassword = $Credential.password | ConvertFrom-SecureString
             $ConfigString = @"
-#Firewall Credential File
+#Fortigate Firewall Credential File
 FirewallIP;$FirewallIP
-FWSSH;$FirewallPort
+FirewallPort;$FirewallPort
 FWUser;$FWUser
 FWPassword;$FWPassword
 
@@ -1203,6 +1206,8 @@ FWPassword;$FWPassword
         $SSHSession = New-SSHSession -ComputerName $FirewallIP -Credential $Credential -Port $FirewallPort
         If ($SSHSession.Connected -eq $True) {
             Write-Output "Reading configuration from Firewall."
+            #First test if we are in the standard or more configuration
+            #We need it in standard to not get prompts
             $AnswerCommand = Invoke-SSHCommand -Index 0 -Command "show system console"
             $ConfigStandard = $AnswerCommand.Output.Contains("standard")
             if (!$ConfigStandard) {
@@ -1238,6 +1243,7 @@ FWPassword;$FWPassword
 $TimeZoneFilePath = Get-ScriptDirectory
 if (Test-Path "$TimeZoneFilePath\TimeZones.csv") {
     $TimeZoneArray = Import-CSV "$TimeZoneFilePath\TimeZones.csv" -delimiter ";"
+    Write-Output "Timezone file imported. Time-zone names will be used."
 }
 else { 
     $TimeZoneArray = $null
@@ -1289,6 +1295,7 @@ $MergeCells = $MainSheet.Range("A2:B2")
 $MergeCells.Select() | out-null
 $MergeCells.MergeCells = $true
 ChangeFontExcelCell $MainSheet 2 1
+#Getting fortigate information from the firstline of the configuration file
 $FirstLine = $loadedConfig[0]
 $FirstLineArray = $FirstLine.Split(":")
 $FirewallInfoArray = $FirstLineArray[0].Split("-")
@@ -1445,6 +1452,10 @@ foreach ($Line in $loadedConfig) {
                 "ospf-interface" {
                     $SUBSection = $True
                     $SUBSectionConfig = "ospfinterface"                    
+                }
+                "ospf6-interface" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "ospf6interface"                    
                 }
                 "realservers" {
                     $SUBSection = $True
@@ -1679,8 +1690,12 @@ foreach ($Line in $loadedConfig) {
                         }
                         "ospfinterface" {
                             $OSPFInterface = InitRouterOSPFInterface
-                            $OSPFInterface | Add-Member -MemberType NoteProperty -Name "Interface" -Value $Value -forc
+                            $OSPFInterface | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -forc
                         }
+                        "ospf6interface" {
+                            $OSPFInterface = InitRouterOSPFInterface
+                            $OSPFInterface | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -forc
+                        }                        
                         "RouterAccessListRule" {
                             $RouterAccessList = InitRouterAccessList
                             $RouterAccessList | Add-Member -MemberType NoteProperty -Name "Name" -Value $RouterAccessListName -force
@@ -1786,6 +1801,11 @@ foreach ($Line in $loadedConfig) {
                             $IDNumber = GetNumber($Value)
                             $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
+                        "ConfigRouterStatic6" {
+                            $rule = InitRouterStatic
+                            $IDNumber = GetNumber($Value)
+                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
+                        }                        
                         "ConfigRouterPolicy" {
                             $rule = InitRouterPolicy
                             $IDNumber = GetNumber($Value)
@@ -1907,6 +1927,9 @@ foreach ($Line in $loadedConfig) {
                         "ospfinterface" {
                             $OSPFInterface | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
+                        "ospf6interface" {
+                            $OSPFInterface | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                        }
                         "RouterAccessListRule" {
                             if ($ConfigLineArray[1] -eq "prefix") {
                                 if ($ConfigLineArray[2] -eq "any") { $Value = "0.0.0.0/0" } 
@@ -2025,10 +2048,27 @@ foreach ($Line in $loadedConfig) {
                                  $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                                  }                        
                         }
+                        "ConfigRouterStatic6" {
+                            if ($ConfigLineArray[1] -eq "dst" ) {
+                                $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3] 
+                                $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                            }
+                            elseif ($ConfigLineArray[1] -eq "dstaddr" ) {
+                                $rule | Add-Member -MemberType NoteProperty -Name dst -Value "" -force
+                                $rule | Add-Member -MemberType NoteProperty -Name dstaddr -Value $Value -force
+                            }
+                            else {
+                                 $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                                 }                        
+                        }                        
                         "ConfigRouterOSPF" {
                             if ($ConfigLineArray[1] -eq 'router-id') { $OSPFRouterID = $ConfigLineArray[2] }
                             elseif ($ConfigLineArray[1] -eq 'passive-Interface') { $OSPFPassiveInterface = $Value }
                         }
+                        "ConfigRouterOSPF6" {
+                            if ($ConfigLineArray[1] -eq 'router-id') { $OSPFRouterID = $ConfigLineArray[2] }
+                            elseif ($ConfigLineArray[1] -eq 'passive-Interface') { $OSPFPassiveInterface = $Value }
+                        }                        
                         "ConfigRouterPolicy" {
                             if (($ConfigLineArray[1] -eq "src" ) -or ($ConfigLineArray[1] -eq "dst" )) {
                                 $Value = GetSubnetCIDRPolicy $ConfigLineArray[2]
@@ -2069,6 +2109,9 @@ foreach ($Line in $loadedConfig) {
                             $HAMGMTInterfaceArray += $HAMGMTInterface
                         }
                         "ospfinterface" {
+                            $RouterInterfaceArray += $OSPFInterface
+                        }
+                        "ospf6interface" {
                             $RouterInterfaceArray += $OSPFInterface
                         }
                         "RouterDistibuteList" {
@@ -2240,8 +2283,19 @@ foreach ($Line in $loadedConfig) {
                                     CreateExcelSheetBGP                                    
                                 }
                                 "ConfigRouterOSPF" {
-                                    CreateExcelSheetOSPF                               
+                                    CreateExcelSheetOSPF
+                                    #reset router-ID just in case OSPF6 is not used
+                                    $OSPFRouterID = "no-ospf"   
+                                    $RouterNetworkArray = @()
+                                    $RouterInterfaceArray = @()
+                                    $OSPFPassiveInterface = @()
+                                    $RouterRedistibuteArray = @()
+                                    $RouterDistibuteListArray = @()   
+                                    $OSPFInterface = @()              
                                 }
+                                "ConfigRouterOSPF6" {
+                                    CreateExcelSheetOSPF                               
+                                }                                
                                 "ConfigRouterPolicy" { 
                                     $rulelist = $rulelist | Sort-Object ID
                                     CreateExcelSheet "Router_Policy$VdomName" $rulelist 
