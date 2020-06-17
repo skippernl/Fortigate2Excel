@@ -1176,15 +1176,19 @@ Switch ($FortigateConfigArray[$FortigateConfigArray.Count-1]) {
         Write-Output "Reading credentialfile"
         if (!(Test-Path($fortigateConfig))) {
             Write-Output "Credential file does not exist -> Creating One."
-            $FirewallIP = Read-Host "Enter FirewallIP or DNS name"
-            $Credential = Get-Credential "Enter Firewall credentials "
+            $FirewallIP = Read-Host "Enter FirewallIP or DNS name."
+            $FirewallPort = Read-Host "Enter portnumber SSH is listening on. (Default 22)"
+            if (!($FirewallPort)) { $FirewallPort = 22 }
+            $Credential = Get-Credential -Message "Enter Firewall credentials."
             $FWUser = $Credential.UserName
             $FWPassword = $Credential.password | ConvertFrom-SecureString
             $ConfigString = @"
 #Firewall Credential File
 FirewallIP;$FirewallIP
+FWSSH;$FirewallPort
 FWUser;$FWUser
 FWPassword;$FWPassword
+
   
 "@
             $ConfigString | Set-Content $fortigateConfig
@@ -1193,8 +1197,10 @@ FWPassword;$FWPassword
         $config = ParseConfigFile $RequiredConfigValues $fortigateConfig
         $FirewallIP = $config.FirewallIP
         $FWPassword = $config.FWPassword | ConvertTo-SecureString 
+        if ($Config.FirewallPort) { $FirewallPort = $Config.FirewallPort }
+        else { $FirewallPort = 22 }
         $Credential = New-Object System.Management.Automation.PsCredential($config.FWUser,$FWPassword)
-        $SSHSession = New-SSHSession -ComputerName $FirewallIP -Credential $Credential
+        $SSHSession = New-SSHSession -ComputerName $FirewallIP -Credential $Credential -Port $FirewallPort
         If ($SSHSession.Connected -eq $True) {
             Write-Output "Reading configuration from Firewall."
             $AnswerCommand = Invoke-SSHCommand -Index 0 -Command "show system console"
