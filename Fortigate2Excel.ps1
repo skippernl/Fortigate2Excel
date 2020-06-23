@@ -472,6 +472,7 @@ Function InitSystemInterface {
     $InitRule | Add-Member -type NoteProperty -name stp -Value ""
     $InitRule | Add-Member -type NoteProperty -name snmp-index -Value ""
     $InitRule | Add-Member -type NoteProperty -name type -Value ""
+    $InitRule | Add-Member -type NoteProperty -name User -Value ""
     $InitRule | Add-Member -type NoteProperty -name vdom -Value ""
     $InitRule | Add-Member -type NoteProperty -name vlanid -Value ""
     
@@ -726,12 +727,13 @@ Function ConvertHaInterfaces ($HAline) {
     Return $TempLine
 }
 Function ConvertTagArrayToLine ($ConvertTagArray) {
-#This function formats the SecurityTag (config tagging) subsection to a nice oneline
+#This function formats the SecurityTag (config tagging) subsection to a nice oneliner
     $TempLine = ""
     If ($ConvertTagArray) {
         foreach ($ConvertTag in $ConvertTagArray) {
             $TempLine = $TempLine + "("
-            $NoteProperties = $ConvertTagArray | get-member -Type NoteProperty
+            #$NoteProperties = $ConvertTagArray | get-member -Type NoteProperty
+            $NoteProperties = SkipEmptyNoteProperties $ConvertTagArray
             foreach ($Noteproperty in $NoteProperties) {
                 $PropertyString = [string]$NoteProperty.Name
                 $TempLine = $TempLine + $ConvertTag.$PropertyString + ","
@@ -759,8 +761,27 @@ Function CopyArrayMember ($ActiveArray) {
     }    
     Return $NewMember
 }
+Function SkipEmptyNoteProperties ($SkipEmptyNotePropertiesArray) {
+    $ReturnNoteProperties = @()
+    $SkipNotePropertiesOrg = $SkipEmptyNotePropertiesArray | get-member -Type NoteProperty
+    foreach ($SkipNotePropertieOrg in $SkipNotePropertiesOrg) {
+        foreach ($SkipEmptyNotePropertiesMember in $SkipEmptyNotePropertiesArray) {
+            $NotePropertyFound = $False
+            $SkipNotePropertiePropertyString = [string]$SkipNotePropertieOrg.Name
+            if ($SkipEmptyNotePropertiesMember.$SkipNotePropertiePropertyString) { 
+                $NotePropertyFound = $True
+                break;
+            }
+        }
+        If ($NotePropertyFound) { $ReturnNoteProperties += $SkipNotePropertieOrg }
+    }
+
+    return $ReturnNoteProperties
+}
+
 Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
-    $NoteProperties = $ActiveArray | get-member -Type NoteProperty
+    #$NoteProperties = $ActiveArray | get-member -Type NoteProperty
+    $NoteProperties = SkipEmptyNoteProperties $ActiveArray
     foreach ($Noteproperty in $NoteProperties) {
         $PropertyString = [string]$NoteProperty.Name
         #Keep passwords/psksecrets out of the documentation
@@ -1066,20 +1087,20 @@ Function ParseConfigFile {
    
     $config = @{}
     if (-not (Test-Path -PathType Leaf $PconfigFile)) {
-     Write-CustomOut "Fatal error: File $PconfigFile not found. Processing aborted."
-     exit 1       
+        Write-Output "Fatal error: File $PconfigFile not found. Processing aborted."
+        exit 1       
     }
     Get-Content $PconfigFile | Where-Object { $_ -match '\S' } | # Skip blank (whitespace only) lines.
-     Foreach-Object { $key, $value = $_ -split '\s*;\s*'; $config.$key = $value 
+        Foreach-Object { $key, $value = $_ -split '\s*;\s*'; $config.$key = $value 
     }
     #$requiredValues = MakeArray VCenterIP VCenterNaam VCUser VCPassword 
     # Initialize this to false and exit after the loop if a required value is missing.
     [bool] $missingRequiredValue = $false
     foreach ($requiredValue in $requiredValues) {
-     if (-not $config.ContainsKey($requiredValue)) {
-      Write-CustomOut "Error: Missing '$requiredValue'. Processing will be aborted."
-      $missingRequiredValue = $true
-     }
+        if (-not $config.ContainsKey($requiredValue)) {
+            Write-Output "Error: Missing '$requiredValue'. Processing will be aborted."
+            $missingRequiredValue = $true
+        }
     } 
     # Exit the program if a required value is missing in the configuration file.
     if ($missingRequiredValue) { exit 2 }
@@ -1106,7 +1127,8 @@ Function UpdateMainSheet ( $ActiveArray ) {
     $MainSheet.Cells.Item(4,2) = $FWType
     $MainSheet.Cells.Item(5,1) = 'Version'
     $MainSheet.Cells.Item(5,2) = $FWVersion  
-    $NoteProperties = $ActiveArray | get-member -Type NoteProperty
+    #$NoteProperties = $ActiveArray | get-member -Type NoteProperty
+    $NoteProperties = SkipEmptyNoteProperties $ActiveArray
     $Row = 6
     $Column = 1
     foreach ($Noteproperty in $NoteProperties) {
