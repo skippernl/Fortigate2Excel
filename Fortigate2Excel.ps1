@@ -762,7 +762,7 @@ Function CopyArrayMember ($ActiveArray) {
     Return $NewMember
 }
 Function SkipEmptyNoteProperties ($SkipEmptyNotePropertiesArray) {
-    $ReturnNoteProperties = @()
+    $ReturnNoteProperties = [System.Collections.ArrayList]@()
     $SkipNotePropertiesOrg = $SkipEmptyNotePropertiesArray | get-member -Type NoteProperty
     foreach ($SkipNotePropertieOrg in $SkipNotePropertiesOrg) {
         foreach ($SkipEmptyNotePropertiesMember in $SkipEmptyNotePropertiesArray) {
@@ -773,7 +773,7 @@ Function SkipEmptyNoteProperties ($SkipEmptyNotePropertiesArray) {
                 break;
             }
         }
-        If ($NotePropertyFound) { $ReturnNoteProperties += $SkipNotePropertieOrg }
+        If ($NotePropertyFound) { $ReturnNoteProperties.Add($SkipNotePropertieOrg) | Out-Null  }
     }
 
     return $ReturnNoteProperties
@@ -1327,22 +1327,22 @@ $FWVersion = $FirewallInfoArray[2]
 $FWType = $FirewallTypeArray[1]
 $SUBSection = $False
 #Creating empty Arrays
-$ruleList = @()
-$DHCPRangeArray = @()
-$DHCPOptionsArray = @()
-$DHCPReservedAddressArray = @()
-$DNSEntryArray = @()
-$VirtualWanLinkMemberArray = @()
-$VirtualWanLinkHealthCheckArray = @()
-$VirtualWanLinkServiceArray = @()
-$RouterAccessListArray = @()
-$RouterRedistibuteArray = @()
-$RouterInterfaceArray = @()
-$RouterNetworkArray = @()
-$RouterDistibuteListArray = @()
-$RouterNeighborArray = @()
-$HAMGMTInterfaceArray = @()
-$ObjectTagArray = @()
+$ruleList = [System.Collections.ArrayList]@()
+$DHCPRangeArray = [System.Collections.ArrayList]@()
+$DHCPOptionsArray = [System.Collections.ArrayList]@()
+$DHCPReservedAddressArray = [System.Collections.ArrayList]@()
+$DNSEntryArray = [System.Collections.ArrayList]@()
+$VirtualWanLinkMemberArray = [System.Collections.ArrayList]@()
+$VirtualWanLinkHealthCheckArray = [System.Collections.ArrayList]@()
+$VirtualWanLinkServiceArray = [System.Collections.ArrayList]@()
+$RouterAccessListArray = [System.Collections.ArrayList]@()
+$RouterRedistibuteArray = [System.Collections.ArrayList]@()
+$RouterInterfaceArray = [System.Collections.ArrayList]@()
+$RouterNetworkArray = [System.Collections.ArrayList]@()
+$RouterDistibuteListArray = [System.Collections.ArrayList]@()
+$RouterNeighborArray = [System.Collections.ArrayList]@()
+$HAMGMTInterfaceArray = [System.Collections.ArrayList]@()
+$ObjectTagArray = [System.Collections.ArrayList]@()
 $OSPFRouterID = "no-ospf"
 foreach ($Line in $loadedConfig) {
     $Proc = $Counter/$MaxCounter*100
@@ -2110,16 +2110,16 @@ foreach ($Line in $loadedConfig) {
                 if ($SUBSection) {
                     Switch ($SUBSectionConfig) {
                         "dhcpiprange" {
-                            $DHCPRangeArray += $DHCPRange
+                            $DHCPRangeArray.Add($DHCPRange) | Out-Null 
                         }
                         "dhcpoptions" {
-                            $DHCPOptionsArray += $DHCPOptions
+                            $DHCPOptionsArray.Add($DHCPOptions) | Out-Null 
                         }
                         "dhcpreservedaddress" {
-                            $DHCPReservedAddressArray += $DHCPReservedAddress
+                            $DHCPReservedAddressArray.Add($DHCPReservedAddress) | Out-Null 
                         } 
                         "DNSEntry" {
-                            $DNSEntryArray += $DNSEntry
+                            $DNSEntryArray.Add($DNSEntry) | Out-Null 
                         }
                         "Gui-Dashboard" {
                             if ($SubSection2) {
@@ -2128,44 +2128,44 @@ foreach ($Line in $loadedConfig) {
                             #Do nothing not implemented
                         }
                         "HA-MGMTInterfaces" {
-                            $HAMGMTInterfaceArray += $HAMGMTInterface
+                            $HAMGMTInterfaceArray.Add($HAMGMTInterface) | Out-Null 
                         }
                         "ospfinterface" {
-                            $RouterInterfaceArray += $OSPFInterface
+                            $RouterInterfaceArray.Add($OSPFInterface) | Out-Null 
                         }
                         "ospf6interface" {
-                            $RouterInterfaceArray += $OSPFInterface
+                            $RouterInterfaceArray.Add($OSPFInterface) | Out-Null 
                         }
                         "RouterDistibuteList" {
-                            $RouterDistibuteListArray += $RouterDistibuteList
+                            $RouterDistibuteListArray.Add($RouterDistibuteList) | Out-Null 
                         }
                         "RouterNeighbor" {
                             #Check if the new value is not the same as the OLD (config has two concecutive next statements)
                             if ($RouterNeighbor.IP -ne $RouterNeighborOLD.IP) {
                                 $RouterNeighborOLD = $RouterNeighbor
-                                $RouterNeighborArray += $RouterNeighbor
+                                $RouterNeighborArray.Add($RouterNeighbor) | Out-Null 
                             }   
                         }
                         "RouterNetwork" {
-                            $RouterNetworkArray += $RouterNetwork
+                            $RouterNetworkArray.Add($RouterNetwork) | Out-Null 
                         }
                         "RouterAccessListRule" {
-                            $RouterAccessListArray += $RouterAccessList
+                            $RouterAccessListArray.Add($RouterAccessList) | Out-Null 
                         }
                         "tagging" {
-                            $ObjectTagArray += $ObjectTag
+                            $ObjectTagArray.Add($ObjectTag) | Out-Null 
                         }
                         "virtualwanlinkhealthcheck" {
-                            $VirtualWanLinkHealthCheckArray += $VirtualWanLinkHealthCheck
+                            $VirtualWanLinkHealthCheckArray.Add($VirtualWanLinkHealthCheck) | Out-Null 
                         }
                         "virtualwanlinkmember" {
-                            $VirtualWanLinkMemberArray += $VirtualWanLinkMember
+                            $VirtualWanLinkMemberArray.Add($VirtualWanLinkMember) | Out-Null 
                         }
                         "virtualwanlinkservice" {
-                            $VirtualWanLinkServiceArray += $VirtualWanLinkService
+                            $VirtualWanLinkServiceArray.Add($VirtualWanLinkService) | Out-Null 
                         }     
                         default {
-                            $rulelist += $rule
+                            $rulelist.Add($rule) | Out-Null 
                         }                   
                     }   # Switch ($SUBSectionConfig)
                 }   #if ($SUBSection)
@@ -2173,29 +2173,29 @@ foreach ($Line in $loadedConfig) {
                     switch ($ConfigSection) {
                         "ConfigSystemAdmin" {
                             $Rule.TrustedHosts = $TrustedHosts
-                            $ruleList += $rule
+                            $rulelist.Add($rule) | Out-Null 
                             $TrustedHosts = "" 
                         }
                         "ConfigSystemDHCP" {
                             $DHCPIP4=$true
                             CreateExcelSheetDHCP
-                            $DHCPRangeArray = @()
-                            $DHCPOptionsArray = @()
-                            $DHCPReservedAddressArray = @()
+                            $DHCPRangeArray = [System.Collections.ArrayList]@()
+                            $DHCPOptionsArray = [System.Collections.ArrayList]@()
+                            $DHCPReservedAddressArray = [System.Collections.ArrayList]@()
                         }
                         "ConfigSystemDHCP6" {
                             $DHCPIP4=$false
                             CreateExcelSheetDHCP
-                            $DHCPRangeArray = @()
-                            $DHCPOptionsArray = @()
-                            $DHCPReservedAddressArray = @()
+                            $DHCPRangeArray = [System.Collections.ArrayList]@()
+                            $DHCPOptionsArray = [System.Collections.ArrayList]@()
+                            $DHCPReservedAddressArray = [System.Collections.ArrayList]@()
                         }                        
                         "ConfigFirewallVIP"  {
                             if ($SUBSectionConfig -ne "VIPRealservers") {
-                                $ruleList += $rule 
+                                $ruleList.Add($rule)  | Out-Null 
                             }
                         }
-                        Default { $ruleList += $rule }
+                        Default { $ruleList.Add($rule) | Out-Null  }
                     }   # switch ($ConfigSection)  
                 }   # else if ($SUBSection)
             }   # if ($ConfigSection)
@@ -2210,16 +2210,16 @@ foreach ($Line in $loadedConfig) {
                         "tagging" {
                             $Value = ConvertTagArrayToLine $ObjectTagArray
                             $rule | Add-Member -MemberType NoteProperty -Name tag -Value $Value -force
-                            $ObjectTagArray = @()
+                            $ObjectTagArray = [System.Collections.ArrayList]@()
                         }                    
                     }
                     $SUBSection = $False
                     switch ($ConfigSection) {
                         "routerredistribute" { 
-                            $RouterRedistibuteArray += $RouterRedistribute 
+                            $RouterRedistibuteArray.Add($RouterRedistribute)  | Out-Null 
                         }
                         "VIPRealservers" {
-                            $ruleList += $rule
+                            $ruleList.Add($rule) | Out-Null 
                         } 
                     }
                 } 
@@ -2308,12 +2308,12 @@ foreach ($Line in $loadedConfig) {
                                     CreateExcelSheetOSPF
                                     #reset router-ID just in case OSPF6 is not used
                                     $OSPFRouterID = "no-ospf"   
-                                    $RouterNetworkArray = @()
-                                    $RouterInterfaceArray = @()
-                                    $OSPFPassiveInterface = @()
-                                    $RouterRedistibuteArray = @()
-                                    $RouterDistibuteListArray = @()   
-                                    $OSPFInterface = @()              
+                                    $RouterNetworkArray = [System.Collections.ArrayList]@()
+                                    $RouterInterfaceArray = [System.Collections.ArrayList]@()
+                                    $OSPFPassiveInterface = [System.Collections.ArrayList]@()
+                                    $RouterRedistibuteArray = [System.Collections.ArrayList]@()
+                                    $RouterDistibuteListArray = [System.Collections.ArrayList]@()   
+                                    $OSPFInterface = [System.Collections.ArrayList]@()              
                                 }
                                 "ConfigRouterOSPF6" {
                                     CreateExcelSheetOSPF                               
@@ -2323,8 +2323,8 @@ foreach ($Line in $loadedConfig) {
                                     CreateExcelSheet "Router_Policy$VdomName" $rulelist 
                                 }
                             } 
-                            $RouterAccessListArray = @()
-                            $RouterRedistibuteArray = @()  
+                            $RouterAccessListArray = [System.Collections.ArrayList]@()
+                            $RouterRedistibuteArray = [System.Collections.ArrayList]@()  
                         }
                         "ConfigSystemAdmin"  {
                             CreateExcelSheet "AdminUsers$VdomName" $rulelist 
@@ -2392,7 +2392,7 @@ foreach ($Line in $loadedConfig) {
                             CreateExcelSheet "VPN_Phase2$VdomName" $rulelist 
                         }
                         "Configvpnsslsettings" {
-                            $ruleList += $rule
+                            $ruleList.Add($rule) | Out-Null 
                             CreateExcelSheet "VPN_SSLSettings$VdomName" $rulelist   
                         }
                         "Configvpnsslwebportal" {
@@ -2401,7 +2401,7 @@ foreach ($Line in $loadedConfig) {
                         }
                     }   # switch ($ConfigSection)     
                     $ConfigSection = $null
-                    $ruleList = @()
+                    $ruleList = [System.Collections.ArrayList]@()
                     Write-Output "Section done."
                 } # if ($ConfigSection)
             } # else if ($SUBSection)
