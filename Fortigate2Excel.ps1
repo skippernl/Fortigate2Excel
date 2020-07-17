@@ -25,6 +25,25 @@ Param
     $fortigateConfig
 )
 
+Function InitAuthenticationRule {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name Groups -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name Portal -Value ""
+    return $InitRule   
+}
+Function InitBookmark {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Group -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name Name -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name Apptype -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Host -Value ""  
+    $InitRule | Add-Member -type NoteProperty -name Port -Value "" 
+    $initRule | Add-Member -type NoteProperty -Name PortalName -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Security  -Value "" 
+    return $InitRule
+}
+
 Function InitDHCPOptions {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value "" 
@@ -323,6 +342,15 @@ Function InitRouterStatic {
     $InitRule | Add-Member -type NoteProperty -name distance -Value ""
     $InitRule | Add-Member -type NoteProperty -name priority -Value ""
     $InitRule | Add-Member -type NoteProperty -name virtual-wan-link -Value ""
+    return $InitRule
+}
+Function InitSplitDNS {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name PortalName -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name domain -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name dns-server1 -Value ""
+    $InitRule | Add-Member -type NoteProperty -name dns-server2 -Value ""  
     return $InitRule
 }
 Function InitSystemAdmin {
@@ -640,12 +668,24 @@ Function InitVpnIpsecPhase2 {
 
 Function InitVPNSSLWebPortal {
     $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name Name -Value ""   
+    $InitRule | Add-Member -type NoteProperty -name PortalName -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name auto-connect "" 
+    $InitRule | Add-Member -type NoteProperty -name display-connection-tools ""                   
+    $InitRule | Add-Member -type NoteProperty -name display-history ""                            
+    $InitRule | Add-Member -type NoteProperty -name display-status ""                             
+    $InitRule | Add-Member -type NoteProperty -name heading ""
+    $InitRule | Add-Member -type NoteProperty -name forticlient-download "" 
     $InitRule | Add-Member -type NoteProperty -name ipv6-tunnel-mode -Value "disable" 
     $InitRule | Add-Member -type NoteProperty -name ip-pools -Value "" 
     $InitRule | Add-Member -type NoteProperty -name ipv6-pools -Value ""
+    $InitRule | Add-Member -type NoteProperty -name keep-alive "" 
+    $InitRule | Add-Member -type NoteProperty -name limit-user-logins ""
+    $InitRule | Add-Member -type NoteProperty -name save-password ""                                               
+    $InitRule | Add-Member -type NoteProperty -name split-tunneling "" 
     $InitRule | Add-Member -type NoteProperty -name tunnel-mode -Value "disable" 
-    $InitRule | Add-Member -type NoteProperty -name web-mode -Value "disable" 
+    $InitRule | Add-Member -type NoteProperty -name user-bookmark "" 
+    $InitRule | Add-Member -type NoteProperty -name web-mode -Value "disable"                             
+    
     return $InitRule   
 }
 
@@ -748,6 +788,8 @@ Function ConvertTagArrayToLine ($ConvertTagArray) {
 
     Return $TempLine
 }
+#CopyArrayMember ($ActiveArray)
+#This Function copies the $ActiveArray value by value thus creating a new object
 Function CopyArrayMember ($ActiveArray) {
     $NewMember = New-Object System.Object;
     $NoteProperties = $ActiveArray | get-member -Type NoteProperty
@@ -761,6 +803,9 @@ Function CopyArrayMember ($ActiveArray) {
     }    
     Return $NewMember
 }
+#Function SkipEmptyNoteProperties ($SkipEmptyNotePropertiesArray)
+#This function Loopt through all available noteproperties and checks if it is used.
+#If it is not used the property will not be returned as it is not needed in the export.
 Function SkipEmptyNoteProperties ($SkipEmptyNotePropertiesArray) {
     $ReturnNoteProperties = [System.Collections.ArrayList]@()
     $SkipNotePropertiesOrg = $SkipEmptyNotePropertiesArray | get-member -Type NoteProperty
@@ -778,9 +823,11 @@ Function SkipEmptyNoteProperties ($SkipEmptyNotePropertiesArray) {
 
     return $ReturnNoteProperties
 }
-
+#Function CreateExcelTabel ($ActiveSheet, $ActiveArray)
+#This Function Creates the Excel tabel 
+#$ActiveSheet is the used Excelsheet
+#$ActiveArray is the array that needs to be exported
 Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
-    #$NoteProperties = $ActiveArray | get-member -Type NoteProperty
     $NoteProperties = SkipEmptyNoteProperties $ActiveArray
     foreach ($Noteproperty in $NoteProperties) {
         $PropertyString = [string]$NoteProperty.Name
@@ -806,6 +853,7 @@ Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
     Return $row
 }
 Function CreateExcelSheet ($SheetName, $SheetArray) {
+    #If the sheet is empty no need to create the Excelpage
     if ($SheetArray) {
         $row = 2
         $Sheet = $workbook.Worksheets.Add()
@@ -813,8 +861,9 @@ Function CreateExcelSheet ($SheetName, $SheetArray) {
         $SheetName = $SheetName.Replace("-","_")
         $Sheet.Name = $SheetName
         $Column = 1
-        #Keeping Visual Studio happy
-        $excel.cells.item($row,$Column) = ""
+        $excel.cells.item($row,$Column) = $SheetName 
+        ChangeFontExcelCell $Sheet $row $Column  
+        $row=$row+2
         $row = CreateExcelTabel $Sheet $SheetArray
         $UsedRange = $Sheet.usedRange                  
         $UsedRange.EntireColumn.AutoFit() | Out-Null
@@ -829,7 +878,10 @@ Function CreateExcelSheetDHCP {
     $SheetName = $SheetName + $rule.Interface + "_" + $rule.ID
     $SheetName = $SheetName.Replace("-","_")
     $Sheet.Name = $SheetName
-    $Column=1
+    $Column = 1   
+    $excel.cells.item($row,$Column) = $SheetName 
+    ChangeFontExcelCell $Sheet $row $Column 
+    $row=$row+2
     $excel.cells.item($row,$Column) = "Normal DHCP options"
     ChangeFontExcelCell $Sheet $row $Column
     $row++
@@ -869,7 +921,10 @@ Function CreateExcelSheetDNSDatabase {
     $SheetName = "DNSDatabase$VdomName"
     $Sheet.Name = $SheetName
     $SheetName = $SheetName.Replace("-","_")
-    $Column=1
+    $Column = 1   
+    $excel.cells.item($row,$Column) = $SheetName 
+    ChangeFontExcelCell $Sheet $row $Column 
+    $row=$row+2
     $excel.cells.item($row,$Column) = "DNSDatabase"
     ChangeFontExcelCell $Sheet $row $Column
     $row++       
@@ -895,6 +950,9 @@ Function CreateExcelSheetHA {
         $SheetName = $SheetName.Replace("-","_")
         $Sheet.Name = $SheetName
         $Column = 1   
+        $excel.cells.item($row,$Column) = $SheetName 
+        ChangeFontExcelCell $Sheet $row $Column 
+        $row=$row+2
         $row = CreateExcelTabel $Sheet $rule
         if ($HAMGMTInterfaceArray) {
             $Column=1
@@ -907,13 +965,71 @@ Function CreateExcelSheetHA {
         $UsedRange.EntireColumn.AutoFit() | Out-Null      
     }
 }
+Function CreateExcelSheetVPNSSLSettings {
+    $row = 2
+    $Sheet = $workbook.Worksheets.Add()
+    PlaceLinkToToC $Sheet
+    $SheetName = "VPN_SSLSettings$VdomName"  
+    $Sheet.Name = $SheetName
+    $Column=1
+    $excel.cells.item($row,$Column) = $SheetName 
+    ChangeFontExcelCell $Sheet $row $Column  
+    $row=$row+2
+    $row = CreateExcelTabel $Sheet $rulelist
+    if ($AuthenticationRuleArray) {
+        $AuthenticationRuleArray = $AuthenticationRuleArray | Sort-Object ID 
+        $row++   
+        $Column=1
+        $excel.cells.item($row,$Column) = "Authentication Rule(s)"
+        ChangeFontExcelCell $Sheet $row $Column
+        $row++    
+        $row = CreateExcelTabel $Sheet $AuthenticationRuleArray
+    }
+    $UsedRange = $Sheet.usedRange               
+    $UsedRange.EntireColumn.AutoFit() | Out-Null 
+}
+Function CreateExcelSheetSSLwebportal {
+    $row = 2
+    $Sheet = $workbook.Worksheets.Add()
+    PlaceLinkToToC $Sheet
+    $SheetName = "VPN_SSLWebportal$VdomName"  
+    $Sheet.Name = $SheetName
+    $Column=1
+    $excel.cells.item($row,$Column) = $SheetName 
+    ChangeFontExcelCell $Sheet $row $Column  
+    $row=$row+2
+    $row = CreateExcelTabel $Sheet $rulelist
+    if ($SplitDNSArray) {
+        $SplitDNSArray = $SplitDNSArray | Sort-Object PortalName,ID
+        $row++   
+        $Column=1
+        $excel.cells.item($row,$Column) = "Split DNS Configuration"
+        ChangeFontExcelCell $Sheet $row $Column
+        $row++    
+        $row = CreateExcelTabel $Sheet $SplitDNSArray 
+    }  
+    if ($BookmarkArray) {
+        $BookmarkArray = $BookmarkArray | Sort-Object PortalName,Group,Name
+        $row++   
+        $Column=1
+        $excel.cells.item($row,$Column) = "Configured bookmarks"
+        ChangeFontExcelCell $Sheet $row $Column
+        $row++    
+        $row = CreateExcelTabel $Sheet $BookmarkArray
+    }  
+    $UsedRange = $Sheet.usedRange               
+    $UsedRange.EntireColumn.AutoFit() | Out-Null      
+}
 Function CreateExcelSheetVirtualWanLink {
     $row = 2
     $Sheet = $workbook.Worksheets.Add()
     PlaceLinkToToC $Sheet
     $SheetName = "Virtual_Wan_Link"
     $Sheet.Name = $SheetName
-    $Column=1
+    $Column = 1   
+    $excel.cells.item($row,$Column) = $SheetName 
+    ChangeFontExcelCell $Sheet $row $Column 
+    $row=$row+2
     $excel.cells.item($row,$Column) = "Global Virtual Wan Link settings"
     ChangeFontExcelCell $Sheet $row $Column
     $row++
@@ -955,6 +1071,9 @@ Function CreateExcelSheetBGP {
         $SheetName = $SheetName.Replace("-","_")
         $Sheet.Name = $SheetName
         $Column = 1   
+        $excel.cells.item($row,$Column) = $SheetName 
+        ChangeFontExcelCell $Sheet $row $Column  
+        $row=$row+2
         $row = CreateExcelTabel $Sheet $rule
         if ($RouterNeighborArray) {
             $Column=1
@@ -990,7 +1109,10 @@ Function CreateExcelSheetOSPF {
         $SheetName = "Router_$RouterSection$VdomName"
         $SheetName = $SheetName.Replace("-","_")
         $Sheet.Name = $SheetName
-        $Column=1    
+        $Column=1
+        $excel.cells.item($row,$Column) = $SheetName 
+        ChangeFontExcelCell $Sheet $row $Column  
+        $row=$row+2 
         $excel.cells.item($row,$Column) = "Router ID"
         ChangeFontExcelCell $Sheet $row $Column
         $Column++
@@ -1328,21 +1450,25 @@ $FWType = $FirewallTypeArray[1]
 $SUBSection = $False
 #Creating empty Arrays
 $ruleList = [System.Collections.ArrayList]@()
+$AuthenticationRuleArray = [System.Collections.ArrayList]@()
+$BookMarkArray = [System.Collections.ArrayList]@()
 $DHCPRangeArray = [System.Collections.ArrayList]@()
 $DHCPOptionsArray = [System.Collections.ArrayList]@()
 $DHCPReservedAddressArray = [System.Collections.ArrayList]@()
 $DNSEntryArray = [System.Collections.ArrayList]@()
-$VirtualWanLinkMemberArray = [System.Collections.ArrayList]@()
-$VirtualWanLinkHealthCheckArray = [System.Collections.ArrayList]@()
-$VirtualWanLinkServiceArray = [System.Collections.ArrayList]@()
+$HAMGMTInterfaceArray = [System.Collections.ArrayList]@()
+$ObjectTagArray = [System.Collections.ArrayList]@()
 $RouterAccessListArray = [System.Collections.ArrayList]@()
 $RouterRedistibuteArray = [System.Collections.ArrayList]@()
 $RouterInterfaceArray = [System.Collections.ArrayList]@()
 $RouterNetworkArray = [System.Collections.ArrayList]@()
 $RouterDistibuteListArray = [System.Collections.ArrayList]@()
 $RouterNeighborArray = [System.Collections.ArrayList]@()
-$HAMGMTInterfaceArray = [System.Collections.ArrayList]@()
-$ObjectTagArray = [System.Collections.ArrayList]@()
+$SplitDNSArray = [System.Collections.ArrayList]@()
+$VirtualWanLinkMemberArray = [System.Collections.ArrayList]@()
+$VirtualWanLinkHealthCheckArray = [System.Collections.ArrayList]@()
+$VirtualWanLinkServiceArray = [System.Collections.ArrayList]@()
+#Make sure $OSPFRouterID has a known value
 $OSPFRouterID = "no-ospf"
 foreach ($Line in $loadedConfig) {
     $Proc = $Counter/$MaxCounter*100
@@ -1362,7 +1488,18 @@ foreach ($Line in $loadedConfig) {
                 "area" {
                     $SUBSection = $True
                     $SUBSectionConfig = "ospfarea"                      
-                } 
+                }    
+                "authentication-rule" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "authenticationrule"   
+                }
+                "bookmarks" {
+                    $SUBSection2 = $True  
+                }      
+                "bookmark-group" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "bookmarkgroup"   
+                }
                 "distribute-list" {
                     $SUBSection = $True
                     $SUBSectionConfig = "Routerdistributelist"                 
@@ -1533,6 +1670,10 @@ foreach ($Line in $loadedConfig) {
                     $SUBSection = $True
                     $SUBSectionConfig = "virtualwanlinkservice"                     
                 }
+                "split-dns" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "splitdns"  
+                }
                 "tagging" {
                     $SUBSection = $true
                     $SUBSectionConfig = "tagging"
@@ -1662,6 +1803,20 @@ foreach ($Line in $loadedConfig) {
                 $Value = CleanupLine $ConfigLine
                 if ($SUBSection) {
                     Switch ($SUBSectionConfig) {
+                        "authenticationrule" {
+                            $AuthenticationRule = InitAuthenticationRule
+                            $AuthenticationRule | Add-Member -MemberType NoteProperty -Name ID -Value $value -force
+                        }
+                        "bookmarkgroup" {
+                            if ($SUBSection2) {
+                                $BookMark = InitBookmark
+                                $BookMark | Add-member -MemberType NoteProperty -Name bookmark-Group -Value $BookMarkGroup -force
+                                $BookMark | Add-member -MemberType NoteProperty -Name Name -Value $Value -force
+                                $BookMark | Add-member -MemberType NoteProperty -Name PortalName -Value $rule.PortalName -force
+                            }
+                            else { $BookMarkGroup = $Value }
+
+                        }
                         "dhcpiprange" {
                             $DHCPRange = InitDHCPRange
                             $IDNumber = GetNumber($Value)
@@ -1709,6 +1864,12 @@ foreach ($Line in $loadedConfig) {
                             $RouterNetwork = InitRouterNetwork
                             $IDNumber = GetNumber($Value)
                             $RouterNetwork | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
+                        }
+                        "splitdns" {
+                            $SplitDNS = InitSplitDNS
+                            $IDNumber = GetNumber($Value)
+                            $SplitDNS | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
+                            $SplitDNS | Add-Member -MemberType NoteProperty -Name PortalName -Value $rule.PortalName -force
                         }
                         "ospfinterface" {
                             $OSPFInterface = InitRouterOSPFInterface
@@ -1901,7 +2062,7 @@ foreach ($Line in $loadedConfig) {
                         } 
                         "Configvpnsslwebportal" {
                             $rule = InitVPNSSLWebPortal
-                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
+                            $rule | Add-Member -MemberType NoteProperty -Name "PortalName" -Value $Value -force
                         }                        
                     }   # switch ($ConfigSection)
                 }   # else if ($SUBSection)
@@ -1912,6 +2073,12 @@ foreach ($Line in $loadedConfig) {
                 $Value = CleanupLine $ConfigLine
                 if ($SUBSection) {
                     Switch ($SUBSectionConfig) {
+                        "authenticationrule" {
+                            $AuthenticationRule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                        }
+                        "bookmarkgroup" {
+                            $BookMark | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                        }
                         "dhcpiprange" {
                             $DHCPRange | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
@@ -1959,6 +2126,9 @@ foreach ($Line in $loadedConfig) {
                                 $RouterAccessList | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                             }
                             else { $RouterAccessList | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force }
+                        }
+                        "splitdns" {
+                            $SplitDNS | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
                         "tagging" {
                             $ObjectTag | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
@@ -2109,6 +2279,14 @@ foreach ($Line in $loadedConfig) {
             if ($ConfigSection) {   
                 if ($SUBSection) {
                     Switch ($SUBSectionConfig) {
+                        "AuthenticationRule" {
+                            $AuthenticationRuleArray.Add($AuthenticationRule) | Out-Null
+                        }
+                        "bookmarkgroup" {
+                            if ($SUBSection2) {
+                                $BookMarkArray.Add($BookMark) | Out-Null
+                            }  
+                        }
                         "dhcpiprange" {
                             $DHCPRangeArray.Add($DHCPRange) | Out-Null 
                         }
@@ -2151,6 +2329,9 @@ foreach ($Line in $loadedConfig) {
                         }
                         "RouterAccessListRule" {
                             $RouterAccessListArray.Add($RouterAccessList) | Out-Null 
+                        }
+                        "splitdns" {
+                            $SplitDNSArray.Add($SplitDNS) | Out-Null
                         }
                         "tagging" {
                             $ObjectTagArray.Add($ObjectTag) | Out-Null 
@@ -2393,11 +2574,12 @@ foreach ($Line in $loadedConfig) {
                         }
                         "Configvpnsslsettings" {
                             $ruleList.Add($rule) | Out-Null 
-                            CreateExcelSheet "VPN_SSLSettings$VdomName" $rulelist   
+                            #CreateExcelSheet "VPN_SSLSettings$VdomName" $rulelist   
+                            CreateExcelSheetVPNSSLSettings
                         }
                         "Configvpnsslwebportal" {
                             $rulelist = $rulelist | Sort-Object Name
-                            CreateExcelSheet "VPN_SSLWebportal$VdomName" $rulelist                       
+                            CreateExcelSheetSSLwebportal                    
                         }
                     }   # switch ($ConfigSection)     
                     $ConfigSection = $null
