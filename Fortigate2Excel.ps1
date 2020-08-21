@@ -357,6 +357,7 @@ Function InitSystemAdmin {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name accprofile -Value ""
+    $InitRule | Add-Member -type NoteProperty -name comments -Value ""
     $InitRule | Add-Member -type NoteProperty -name vdom -Value ""
     $InitRule | Add-Member -type NoteProperty -name trustedhosts -Value ""
     return $InitRule 
@@ -665,7 +666,8 @@ Function InitVpnIpsecPhase2 {
     $InitRule | Add-Member -type NoteProperty -name pfs -Value "enable"
     return $InitRule
 }
-
+#Function InitVPNSSLWebPortal
+#Default values are present these will be overwritten when needed
 Function InitVPNSSLWebPortal {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name PortalName -Value "" 
@@ -681,7 +683,7 @@ Function InitVPNSSLWebPortal {
     $InitRule | Add-Member -type NoteProperty -name keep-alive "" 
     $InitRule | Add-Member -type NoteProperty -name limit-user-logins ""
     $InitRule | Add-Member -type NoteProperty -name save-password ""                                               
-    $InitRule | Add-Member -type NoteProperty -name split-tunneling "" 
+    $InitRule | Add-Member -type NoteProperty -name split-tunneling "enabled" 
     $InitRule | Add-Member -type NoteProperty -name tunnel-mode -Value "disable" 
     $InitRule | Add-Member -type NoteProperty -name user-bookmark "" 
     $InitRule | Add-Member -type NoteProperty -name web-mode -Value "disable"                             
@@ -709,13 +711,13 @@ Function InitVPNSSLSettings {
 
 Function CleanupLine ($LineToCleanUp) {
     $LineToCleanUp = $LineToCleanUp.TrimStart()
-    $LineToCleanUpArray = $LineToCleanUp.Split('`"')
+    $LineToCleanUpArray = $LineToCleanUp.Split('"')
     $i=1
     $ReturnValue = $null
     if ($LineToCleanUpArray.Count -gt 1) {
         #Line has "" in it 
         DO {
-            $LineToCleanUpArrayMember = $LineToCleanUpArray[$i].Trim()
+            $LineToCleanUpArrayMember = $LineToCleanUpArray[$i]
             if ($LineToCleanUpArrayMember -ne "") {
                 if ($ReturnValue) { $ReturnValue = $ReturnValue + "," + $LineToCleanUpArrayMember }
                 else { $ReturnValue = $LineToCleanUpArrayMember}
@@ -2195,7 +2197,7 @@ foreach ($Line in $loadedConfig) {
                                 else { $TrustedHosts = $Value }
                             }
                             else { 
-                                $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $ConfigLineArray[2] -force
+                                $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                             }
                         }
                         "ConfigSystemHA" {
