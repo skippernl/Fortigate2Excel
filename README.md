@@ -11,4 +11,4 @@ Files with extention .cred are saved credential files (IP/Username/Encryptedpass
 For each section that is found a new Tab will be created.
 It is VDOM aware.
 
-Powershel versie 7.1.0-preview.6 or newer reconmended for performance reasons
+Powershell version 7.1.0-preview.6 or newer reconmended for performance reasons

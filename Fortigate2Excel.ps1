@@ -723,6 +723,8 @@ Function CleanupLine ($LineToCleanUp) {
                 else { $ReturnValue = $LineToCleanUpArrayMember}
             }
             $i++
+            #The next value is a space and can always be skipped
+            $i++
         } While ($i -le $LineToCleanUpArray.Count-1)
     }
     else {
