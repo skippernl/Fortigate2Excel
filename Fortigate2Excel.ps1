@@ -70,6 +70,7 @@ Function InitDHCPReservedAddress {
 Function InitFirewallAddress {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name associated-interface -Value ""
+    $InitRule | Add-Member -type NoteProperty -name color -Value ""
     $InitRule | Add-Member -type NoteProperty -name country -Value ""
     $InitRule | Add-Member -type NoteProperty -name End-IP -Value ""
     $InitRule | Add-Member -type NoteProperty -name FQDN -Value ""
@@ -88,6 +89,7 @@ Function InitFirewallAddress6 {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Associated-interface -Value ""
     $InitRule | Add-Member -type NoteProperty -name comment -Value ""
+    $InitRule | Add-Member -type NoteProperty -name color -Value ""
     $InitRule | Add-Member -type NoteProperty -name country -Value ""
     $InitRule | Add-Member -type NoteProperty -name End-IP -Value ""
     $InitRule | Add-Member -type NoteProperty -name FQDN -Value ""
@@ -106,6 +108,7 @@ Function InitFirewallAddress6 {
 }
 Function InitFirewallAddressGroup {
     $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name color -Value ""
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name Member -Value ""
     $InitRule | Add-Member -type NoteProperty -name UUID -Value ""
@@ -113,6 +116,7 @@ Function InitFirewallAddressGroup {
 }
 Function InitFirewallAddressGroup6 {
     $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name color -Value ""
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name Member -Value ""
     $InitRule | Add-Member -type NoteProperty -name UUID -Value ""
