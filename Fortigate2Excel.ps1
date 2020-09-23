@@ -148,6 +148,8 @@ Function InitFirewallRule {
     $InitRule | Add-Member -type NoteProperty -name comments -Value ""
     $InitRule | Add-Member -type NoteProperty -name dstaddr -Value ""
     $InitRule | Add-Member -type NoteProperty -name dstintf -Value ""
+    $InitRule | Add-Member -type NoteProperty -name internet-service -Value ""
+    $InitRule | Add-Member -type NoteProperty -name internet-service-id -Value ""
     #Default is disable
     $InitRule | Add-Member -type NoteProperty -name ippool -Value "disable"
     $InitRule | Add-Member -type NoteProperty -name ips-sensor -Value ""
@@ -1236,6 +1238,21 @@ Function ParseConfigFile {
     if ($missingRequiredValue) { exit 2 }
     $config
  }
+ #This function Parses the ISDB and changes the ID for the name if found.
+ Function ParseISDB ($ParseISDBlist) {
+    Foreach  ($rule in $ParseISDBlist) {
+        if ($Rule."internet-service-id" -ne "") {
+            foreach ($FortiISDB in  $FortiISDBArray) {
+                if ($Rule."internet-service-id" -eq $FortiISDB.ID) {
+                    #we found the ID change the name and break out of the foreach loop.
+                    $Rule."internet-service-id" = $FortiISDB.Name
+                    break
+                }
+            }
+        }
+    }
+    return $ParseISDBlist
+ }
  Function  PlaceLinkToToC ($CurrentSheet) {
     $CurrentSheet.Cells.Item(1,1) = "Table of Contents"
     $CurrentSheet.Hyperlinks.Add(
@@ -1388,19 +1405,28 @@ FWPassword;$FWPassword
         $loadedConfig = Get-Content $fortigateConfig
      }
      default {
-        Write-Output "Extention needs to be .conf for a configfile OR .cred for a credential file!"
+        Write-Output "Extention needs to be .conf for a config file OR .cred for a credential file!"
         exit 1
     }
 } 
-$TimeZoneFilePath = Get-ScriptDirectory
-if (Test-Path "$TimeZoneFilePath\TimeZones.csv") {
-    $TimeZoneArray = Import-CSV "$TimeZoneFilePath\TimeZones.csv" -delimiter ";"
-    Write-Output "Timezone file imported. Time-zone names will be used."
+$ScriptDirectoryPath = Get-ScriptDirectory
+if (Test-Path "$ScriptDirectoryPath\TimeZones.csv") {
+    $TimeZoneArray = Import-CSV "$ScriptDirectoryPath\TimeZones.csv" -delimiter ";"
+    Write-Output "Timezone file imported. Time-zone names will be used instead of ID."
 }
 else { 
     $TimeZoneArray = $null
-    Write-Output "Could not find Timezones.csv in $TimeZoneFilePath."
+    Write-Output "Could not find Timezones.csv in $ScriptDirectoryPath."
     Write-Output "Script will continue, ID will be used instead of time-zone name."
+}
+if (Test-Path "$ScriptDirectoryPath\ISDB-Fortigate.csv") {
+    $FortiISDBArray = Import-CSV "$ScriptDirectoryPath\ISDB-Fortigate.csv" -delimiter ";"
+    Write-Output "FortiNet ISDB file imported. Database names will be used instead of ID."
+}
+else { 
+    $FortiISDBArray = $null
+    Write-Output "Could not find ISDB-Fortigate.csv in $ScriptDirectoryPath."
+    Write-Output "Script will continue, ID will be used instead of FortiNet ISDB name."
 }
 $Counter=0
 $MaxCounter=$loadedConfig.count
@@ -2422,6 +2448,9 @@ foreach ($Line in $loadedConfig) {
                     switch ($ConfigSection) {  
                         "ConfigFirewallPolicy" { 
                             $rulelist = $rulelist | Sort-Object ID
+                            if ($FortigateConfigArray) {
+                                $rulelist = ParseISDB $rulelist
+                            }
                             CreateExcelSheet "IPV4_Rules$VdomName" $rulelist  
                         }
                         "ConfigFirewallAddress" { 
