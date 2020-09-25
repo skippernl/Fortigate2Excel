@@ -598,6 +598,15 @@ Function InitUserLocal {
     $InitRule | Add-Member -type NoteProperty -name ldap-server -Value ""
     return $InitRule      
 }
+Function InitUserRadius {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name auth-type -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name secret -Value ""
+    $InitRule | Add-Member -type NoteProperty -name server -Value ""
+    $InitRule | Add-Member -type NoteProperty -name timeout -Value "5" 
+    return $InitRule      
+}
 Function InitVirtualWanLinkHealthCheck {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""    
@@ -842,7 +851,7 @@ Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
     foreach ($Noteproperty in $NoteProperties) {
         $PropertyString = [string]$NoteProperty.Name
         #Keep passwords/psksecrets out of the documentation
-        if (($PropertyString -ne "password") -and ($PropertyString -ne "psksecret") -and ($PropertyString -ne "passwd")) {
+        if (!$SkipExportProperties.Contains($PropertyString)) { 
             $excel.cells.item($row,$Column) = $PropertyString
             $Column++
         }
@@ -852,7 +861,7 @@ Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
         $Column=1
         foreach ($Noteproperty in $NoteProperties) {
             $PropertyString = [string]$NoteProperty.Name
-            if (($PropertyString -ne "password") -and ($PropertyString -ne "psksecret") -and ($PropertyString -ne "passwd")) {
+            if (!$SkipExportProperties.Contains($PropertyString)) { 
                 $Value = $ActiveMember.$PropertyString         
                 $excel.cells.item($row,$Column) = $Value
                 $Column++
@@ -1245,7 +1254,7 @@ Function ParseConfigFile {
             foreach ($FortiISDB in  $FortiISDBArray) {
                 if ($Rule."internet-service-id" -eq $FortiISDB.ID) {
                     #we found the ID change the name and break out of the foreach loop.
-                    $Rule."internet-service-id" = $FortiISDB.Name
+                    $Rule."internet-service-id" = $FortiISDB.Name + "(" + $FortiISDB.ID + ")"
                     break
                 }
             }
@@ -1504,6 +1513,7 @@ $VirtualWanLinkHealthCheckArray = [System.Collections.ArrayList]@()
 $VirtualWanLinkServiceArray = [System.Collections.ArrayList]@()
 #Make sure $OSPFRouterID has a known value
 $OSPFRouterID = "no-ospf"
+$SkipExportProperties = MakeArray "passwd" "password" "psksecret" "secret"  
 foreach ($Line in $loadedConfig) {
     $Proc = $Counter/$MaxCounter*100
     $ProcString = $Proc.ToString("0.00")
@@ -1790,6 +1800,10 @@ foreach ($Line in $loadedConfig) {
                             $ConfigSection = "ConfigUserLocal"
                             Write-Output "Config user local line found."                           
                         }
+                        "radius" {
+                            $ConfigSection = "ConfigUserRadius"
+                            Write-Output "Config user radius line found."                           
+                        }
                     }   # switch ($ConfigLineArray[2])
                 }        
                 "vdom" { $ConfigSection = "ConfigVDOM" }
@@ -2070,6 +2084,10 @@ foreach ($Line in $loadedConfig) {
                             $rule = InitUserLocal
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -Force                            
                         }
+                        "ConfigUserRadius" {
+                            $rule = InitUserRadius
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -Force                            
+                        }                        
                         "ConfigFirewallServiceCategory" {
                             $rule = InitFirewallServiceCategory
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force                      
@@ -2600,6 +2618,10 @@ foreach ($Line in $loadedConfig) {
                         "ConfigUserLocal" {
                             $rulelist = $rulelist | Sort-Object Name
                             CreateExcelSheet "UserLocal$VdomName" $rulelist                         
+                        }
+                        "ConfigUserRadius" {
+                            $rulelist = $rulelist | Sort-Object Name
+                            CreateExcelSheet "UserRadius$VdomName" $rulelist                         
                         }
                         "Configvpnipsecphase1" { 
                             $rulelist = $rulelist | Sort-Object Name
