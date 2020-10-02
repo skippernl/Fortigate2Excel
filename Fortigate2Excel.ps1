@@ -359,6 +359,25 @@ Function InitSplitDNS {
     $InitRule | Add-Member -type NoteProperty -name dns-server2 -Value ""  
     return $InitRule
 }
+Function InitSystemAccprofile {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name mntgrp -Value ""
+    $InitRule | Add-Member -type NoteProperty -name admingrp -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name updategrp -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name authgrp -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name sysgrp -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name netgrp -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name loggrp -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name routegrp -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name fwgrp -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name vpngrp -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name utmgrp -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name endpoint-control-grp -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name wifi -Value "" 
+
+    return $InitRule 
+}
 Function InitSystemAdmin {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
@@ -1728,6 +1747,10 @@ foreach ($Line in $loadedConfig) {
                             $ConfigSection = "ConfigSystemAdmin"
                             Write-Output "Config system admin line found."                            
                         }
+                        "accprofile" {
+                            $ConfigSection = "ConfigSystemAccprofile"
+                            Write-Output "Config sytem accprofile line found."
+                        }
                         "dhcp" {
                             $ConfigSection = "ConfigSystemDHCP"
                             Write-Output "Config system dhcp (IPV4) line found."
@@ -1961,7 +1984,11 @@ foreach ($Line in $loadedConfig) {
                     }   # Switch ($SUBSectionConfig)
                 }   # if ($SUBSection)
                 else {
-                    switch ($ConfigSection) {       
+                    switch ($ConfigSection) { 
+                        "ConfigSystemAccprofile" {
+                            $rule = InitSystemAccprofile
+                            $rule | Add-Member -MemberType NoteProperty -Name Name -Value $Value -force
+                        }      
                         "ConfigSystemAdmin" {
                             $rule = InitSystemAdmin
                             $TrustedHosts = ""
@@ -2235,9 +2262,6 @@ foreach ($Line in $loadedConfig) {
                                 $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                             } 
                         }
-                        "ConfigSystemDHCP" {  
-                            $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force 
-                        }  
                         "ConfigSystemAdmin" {
                             if ($ConfigLineArray[1].StartsWith("trusthost")) {
                                 $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3]
@@ -2253,9 +2277,6 @@ foreach ($Line in $loadedConfig) {
                         "ConfigSystemHA" {
                             if ($ConfigLineArray[1] -eq "hbdev") { $Value = ConvertHaInterfaces $Value }
                             $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force                             
-                        }
-                        "Configvpnipsecphase1" {
-                            $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
                         "Configvpnipsecphase2" {                           
                             if (($ConfigLineArray[1] -eq "src-subnet") -or ($ConfigLineArray[1] -eq "dst-subnet")) {
@@ -2303,7 +2324,7 @@ foreach ($Line in $loadedConfig) {
                             }
                             else {
                                  $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
-                                 }                        
+                            }                        
                         }                        
                         "ConfigRouterOSPF" {
                             if ($ConfigLineArray[1] -eq 'router-id') { $OSPFRouterID = $ConfigLineArray[2] }
@@ -2561,6 +2582,9 @@ foreach ($Line in $loadedConfig) {
                             } 
                             $RouterAccessListArray = [System.Collections.ArrayList]@()
                             $RouterRedistibuteArray = [System.Collections.ArrayList]@()  
+                        }
+                        "ConfigSystemAccprofile" {
+                            CreateExcelSheet "AccProfile$VdomName" $rulelist 
                         }
                         "ConfigSystemAdmin"  {
                             CreateExcelSheet "AdminUsers$VdomName" $rulelist 
