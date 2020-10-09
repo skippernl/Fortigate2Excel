@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Fortigate2Excel parses rules from a FortiGate device into a Excel file.
+Fortigate2Excel parses the configuration from a FortiGate device into a Excel file.
 .DESCRIPTION
 The Fortigate2Excel reads a FortiGate config file and pulls out the configuration for each VDOM in the file into excel.
 .PARAMETER fortigateConfig
@@ -14,11 +14,10 @@ If the credential file does not exist you will be prompted for the information a
 .NOTES
 Author: Xander Angenent
 Idea: Drew Hjelm (@drewhjelm) (creates csv of ruleset only)
-Last Modified: 2020/02/20
+Last Modified: 2020/10/02
 #Estimated completion time from http://mylifeismymessage.net/1672/
 #Uses Posh-SSH https://github.com/darkoperator/Posh-SSH if reading directly from the firewall
 #>
-#20200220 Table of Contents Added
 Param
 (
     [Parameter(Mandatory = $true)]
@@ -560,13 +559,8 @@ Function InitSystemSessionHelper {
 }
 Function InitSystemSettings {
     $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name inspection-mode -Value ""
-    $InitRule | Add-Member -type NoteProperty -name sip-nat-trace -Value "Enable"
-    $InitRule | Add-Member -type NoteProperty -name default-voip-alg-mode -Value ""
-    $InitRule | Add-Member -type NoteProperty -name gui-dns-database -Value "Disable"
-    $InitRule | Add-Member -type NoteProperty -name gui-ips -Value "Disable"
-    $InitRule | Add-Member -type NoteProperty -name sip-helper -Value "Disable"
-    $InitRule | Add-Member -type NoteProperty -name gui-explicit-proxy -Value "Disable"
+#There is only ONE set of this settting. Therefore is is not needed to define the NoteProperties.
+
     return $InitRule
 }
 Function InitSystemVirtualWanLink {
@@ -2618,6 +2612,7 @@ foreach ($Line in $loadedConfig) {
                             CreateExcelSheet "LinkMonitor$VdomName" $rulelist                         
                         }
                         "ConfigSystemSettings" {
+                            $rulelist.Add($rule) | Out-Null 
                             CreateExcelSheet "SystemSettings$VdomName" $ruleList
                         }
                         "ConfigSystemSessionHelper" {
