@@ -718,7 +718,15 @@ Function InitVPNSSLWebPortal {
     
     return $InitRule   
 }
+#Function for SSLWebPortal OS CheckList
+Function InitVPNSSLWebPortalOSCheckList {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name PortalName -Value ""
+    $InitRule | Add-Member -type NoteProperty -name OS -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name Action "Allow"
 
+    return $InitRule
+}
 Function InitVPNSSLSettings {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name default-portal -Value ""   
@@ -1040,6 +1048,7 @@ Function CreateExcelSheetSSLwebportal {
         $row++    
         $row = CreateExcelTabel $Sheet $SplitDNSArray 
     }  
+    $row++ 
     if ($BookmarkArray) {
         $BookmarkArray = $BookmarkArray | Sort-Object PortalName,Group,Name
         $row++   
@@ -1049,6 +1058,16 @@ Function CreateExcelSheetSSLwebportal {
         $row++    
         $row = CreateExcelTabel $Sheet $BookmarkArray
     }  
+    $row++ 
+    if ($OSCheckListArray) {
+        $OSCheckListArray = $OSCheckListArray | Sort-Object PortalName,OS
+        $row++   
+        $Column=1
+        $excel.cells.item($row,$Column) = "Configured OS check"
+        ChangeFontExcelCell $Sheet $row $Column
+        $row++    
+        $row = CreateExcelTabel $Sheet $OSCheckListArray
+    }     
     $UsedRange = $Sheet.usedRange               
     $UsedRange.EntireColumn.AutoFit() | Out-Null      
 }
@@ -1514,6 +1533,7 @@ $DHCPReservedAddressArray = [System.Collections.ArrayList]@()
 $DNSEntryArray = [System.Collections.ArrayList]@()
 $HAMGMTInterfaceArray = [System.Collections.ArrayList]@()
 $ObjectTagArray = [System.Collections.ArrayList]@()
+$OSCheckListArray = [System.Collections.ArrayList]@()
 $RouterAccessListArray = [System.Collections.ArrayList]@()
 $RouterRedistibuteArray = [System.Collections.ArrayList]@()
 $RouterInterfaceArray = [System.Collections.ArrayList]@()
@@ -1664,6 +1684,13 @@ foreach ($Line in $loadedConfig) {
                 "options" {
                     $SUBSection = $True
                     $SUBSectionConfig = "dhcpoptions"
+                }
+                "os-check-list" {
+                    $SUBSection = $True 
+                    $SUBSectionConfig = "oschecklist" 
+                    $OSCheckListRule = InitVPNSSLWebPortalOSCheckList
+                    $OSCheckListRule.OS = CleanupLine $ConfigLineArray[2]
+                    $OSCheckListRule.PortalName = $Rule.PortalName
                 }
                 "ospf-interface" {
                     $SUBSection = $True
@@ -2186,6 +2213,9 @@ foreach ($Line in $loadedConfig) {
                         "RouterRedistribute" {
                             $RouterRedistribute | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force                            
                         }
+                        "oschecklist" {
+                            $OSCheckListRule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force  
+                        }
                         "ospfinterface" {
                             $OSPFInterface | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
@@ -2455,6 +2485,9 @@ foreach ($Line in $loadedConfig) {
                 }
                 else {
                     Switch ($SUBSectionConfig) {
+                        "oschecklist" {
+                            $OSCheckListArray.Add($OSCheckListRule)  | Out-Null
+                        }
                         "tagging" {
                             $Value = ConvertTagArrayToLine $ObjectTagArray
                             $rule | Add-Member -MemberType NoteProperty -Name tag -Value $Value -force
