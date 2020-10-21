@@ -802,8 +802,8 @@ Function ConvertHaInterfaces ($HAline) {
      }
      else { $TempLine = $TempLine + "),(" }
     }
-    $TempLine = $TempLine.Substring(0,$TempLine.Length-2)
-    #$TempLine = $TempLine + ")"
+    $TempLine = $TempLine.Substring(0,$TempLine.Length-1)
+    $TempLine = $TempLine + ")"
     Return $TempLine
 }
 Function ConvertTagArrayToLine ($ConvertTagArray) {
@@ -1664,7 +1664,11 @@ foreach ($Line in $loadedConfig) {
                 "health-check" {
                     $SUBSection = $True
                     $SUBSectionConfig = "virtualwanlinkhealthcheck"                 
-                }                
+                }     
+                "ipv6" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "ipv6"                    
+                }           
                 "ip-range" {
                     $SUBSection = $True
                     $SUBSectionConfig = "dhcpiprange"
