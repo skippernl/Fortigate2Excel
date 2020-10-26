@@ -3,25 +3,43 @@
 Fortigate2Excel parses the configuration from a FortiGate device into a Excel file.
 .DESCRIPTION
 The Fortigate2Excel reads a FortiGate config file and pulls out the configuration for each VDOM in the file into excel.
-.PARAMETER fortigateConfig
+.PARAMETER FortigateConfig
 [REQUIRED] This is the path to the FortiGate config/credential file
-.EXAMPLE
-.\Fortigate2Excel.ps1 -fortiGateConfig "c:\temp\config.conf"
-Parses a FortiGate config file and places the Excel file in the same folder where the config was found.
-.\Fortigate2Excel.ps1 -fortiGateConfig "c:\temp\config.cred"
-Parses a saved credential file and places the Excel file in the same folder where the file was found.
-If the credential file does not exist you will be prompted for the information and the file is created
+.PARAMETER SkipFilter 
+[OPTIONAL] Set this value to $TRUE for not using Excel Filters.
+.PARAMETER SkipFortiISDB 
+[OPTIONAL] Set this value to $TRUE for keeping the number instead of the Fortigate ISDB name
+.PARAMETER SkipTimeZone
+[OPTIONAL] Set this value to $TRUE for keeping the number instead of the Timezone name
+.\Fortigate2Excel.ps1 -FortiGateConfig "c:\temp\config.conf"
+    Parses a FortiGate config file and places the Excel file in the same folder where the config was found.
+.\Fortigate2Excel.ps1 -FortiGateConfig "c:\temp\config.cred"
+    Parses a saved credential file and places the Excel file in the same folder where the file was found.
+    If the credential file does not exist you will be prompted for the information and the file is created.
+    .\Fortigate2Excel.ps1 -FortiGateConfig "c:\temp\config.conf" -SkipFilter:$true
+    Parses a FortiGate config file and places the Excel file in the same folder where the config was found.
+    No filters will be auto applied.
+.\Fortigate2Excel.ps1 -FortiGateConfig "c:\temp\config.conf" -SkipFortiISDB:$true
+    Parses a FortiGate config file and places the Excel file in the same folder where the config was found.
+    Skipping the Fortigate InternetServiceDatabase conversion to Text.
+.\Fortigate2Excel.ps1 -FortiGateConfig "c:\temp\config.conf" -SkipTimeZone:$true
+    Parses a FortiGate config file and places the Excel file in the same folder where the config was found.
+    Skipping the TimeZone conversion to Text.   
 .NOTES
-Author: Xander Angenent
+Author: Xander Angenent (@XaAng70)
 Idea: Drew Hjelm (@drewhjelm) (creates csv of ruleset only)
-Last Modified: 2020/10/02
-#Estimated completion time from http://mylifeismymessage.net/1672/
+Last Modified: 2020/10/26
+#Uses Estimated completion time from http://mylifeismymessage.net/1672/
 #Uses Posh-SSH https://github.com/darkoperator/Posh-SSH if reading directly from the firewall
+#Uses Function that converts any Excel column number to A1 format https://gallery.technet.microsoft.com/office/Powershell-function-that-88f9f690
 #>
 Param
 (
     [Parameter(Mandatory = $true)]
-    $fortigateConfig
+    $fortigateConfig,
+    [switch]$SkipFilter = $false,
+    [switch]$SkipFortiISDB = $false,
+    [switch]$SkipTimeZone = $false
 )
 
 Function InitAuthenticationRule {
@@ -863,6 +881,29 @@ Function SkipEmptyNoteProperties ($SkipEmptyNotePropertiesArray) {
 
     return $ReturnNoteProperties
 }
+Function Convert-NumberToA1 { 
+    <# 
+    .SYNOPSIS 
+    This converts any integer into A1 format. 
+    .DESCRIPTION 
+    See synopsis. 
+    .PARAMETER number 
+    Any number between 1 and 2147483647 
+    #> 
+     
+    Param([parameter(Mandatory=$true)] 
+          [int]$number) 
+   
+    $a1Value = $null 
+    While ($number -gt 0) { 
+      $multiplier = [int][system.math]::Floor(($number / 26)) 
+      $charNumber = $number - ($multiplier * 26) 
+      If ($charNumber -eq 0) { $multiplier-- ; $charNumber = 26 } 
+      $a1Value = [char]($charNumber + 64) + $a1Value 
+      $number = $multiplier 
+    } 
+    Return $a1Value 
+  }
 #Function CreateExcelTabel ($ActiveSheet, $ActiveArray)
 #This Function Creates the Excel tabel 
 #$ActiveSheet is the used Excelsheet
@@ -904,7 +945,15 @@ Function CreateExcelSheet ($SheetName, $SheetArray) {
         $excel.cells.item($row,$Column) = $SheetName 
         ChangeFontExcelCell $Sheet $row $Column  
         $row=$row+2
+        $StartRow = $Row
         $row = CreateExcelTabel $Sheet $SheetArray
+        #No need to filer if there is only one row.
+        if (!($SkipFilter) -and ($SheetArray.Count -gt 1)) {
+            $RowCount =  $Sheet.UsedRange.Rows.Count
+            $ColumCount =  $Sheet.UsedRange.Columns.Count
+            $ColumExcel = Convert-NumberToA1 $ColumCount
+            $Sheet.Range("A$($StartRow):$($ColumExcel)$($RowCount)").AutoFilter()  | Out-Null
+        }
         $UsedRange = $Sheet.usedRange                  
         $UsedRange.EntireColumn.AutoFit() | Out-Null
     }
@@ -1451,24 +1500,35 @@ FWPassword;$FWPassword
     }
 } 
 $ScriptDirectoryPath = Get-ScriptDirectory
-if (Test-Path "$ScriptDirectoryPath\TimeZones.csv") {
-    $TimeZoneArray = Import-CSV "$ScriptDirectoryPath\TimeZones.csv" -delimiter ";"
-    Write-Output "Timezone file imported. Time-zone names will be used instead of ID."
+if ($SkipTimeZone) {
+    Write-Output "Timezone file not imported due to SkipTimeZone flag set to true."
 }
-else { 
-    $TimeZoneArray = $null
-    Write-Output "Could not find Timezones.csv in $ScriptDirectoryPath."
-    Write-Output "Script will continue, ID will be used instead of time-zone name."
+else {
+    if (Test-Path "$ScriptDirectoryPath\TimeZones.csv") {
+        $TimeZoneArray = Import-CSV "$ScriptDirectoryPath\TimeZones.csv" -delimiter ";"
+        Write-Output "Timezone file imported. Time-zone names will be used instead of ID."
+    }
+    else { 
+        $TimeZoneArray = $null
+        Write-Output "Could not find Timezones.csv in $ScriptDirectoryPath."
+        Write-Output "Script will continue, ID will be used instead of time-zone name."
+    }    
 }
-if (Test-Path "$ScriptDirectoryPath\ISDB-Fortigate.csv") {
-    $FortiISDBArray = Import-CSV "$ScriptDirectoryPath\ISDB-Fortigate.csv" -delimiter ";"
-    Write-Output "FortiNet ISDB file imported. Database names will be used instead of ID."
+if ($SkipFortiISDB) {
+    Write-Output "FortiNet ISDB file not imported due to SkipFortiISDB flag set to true."   
 }
-else { 
-    $FortiISDBArray = $null
-    Write-Output "Could not find ISDB-Fortigate.csv in $ScriptDirectoryPath."
-    Write-Output "Script will continue, ID will be used instead of FortiNet ISDB name."
+else {
+    if (Test-Path "$ScriptDirectoryPath\ISDB-Fortigate.csv") {
+        $FortiISDBArray = Import-CSV "$ScriptDirectoryPath\ISDB-Fortigate.csv" -delimiter ";"
+        Write-Output "FortiNet ISDB file imported. Database names will be used instead of ID."
+    }
+    else { 
+        $FortiISDBArray = $null
+        Write-Output "Could not find ISDB-Fortigate.csv in $ScriptDirectoryPath."
+        Write-Output "Script will continue, ID will be used instead of FortiNet ISDB name."
+    }
 }
+
 $Counter=0
 $MaxCounter=$loadedConfig.count
 $date = Get-Date -Format yyyyMMddHHmm
