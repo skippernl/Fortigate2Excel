@@ -918,6 +918,7 @@ Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
             $Column++
         }
     }
+    $StartRow = $Row
     $Row++
     foreach ($ActiveMember in $ActiveArray) {
         $Column=1
@@ -931,6 +932,12 @@ Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
         }                      
         $row++
     }    
+    #No need to filer if there is only one row.
+    if (!($SkipFilter) -and ($ActiveArray.Count -gt 1)) {
+        #$ColumCount = $NoteProperties.count
+        $ColumExcel = Convert-NumberToA1 $NoteProperties.count
+        $Sheet.Range("A$($StartRow):$($ColumExcel)$($Row-1)").AutoFilter()  | Out-Null
+    }
     Return $row
 }
 Function CreateExcelSheet ($SheetName, $SheetArray) {
@@ -945,15 +952,7 @@ Function CreateExcelSheet ($SheetName, $SheetArray) {
         $excel.cells.item($row,$Column) = $SheetName 
         ChangeFontExcelCell $Sheet $row $Column  
         $row=$row+2
-        $StartRow = $Row
         $row = CreateExcelTabel $Sheet $SheetArray
-        #No need to filer if there is only one row.
-        if (!($SkipFilter) -and ($SheetArray.Count -gt 1)) {
-            $RowCount =  $Sheet.UsedRange.Rows.Count
-            $ColumCount =  $Sheet.UsedRange.Columns.Count
-            $ColumExcel = Convert-NumberToA1 $ColumCount
-            $Sheet.Range("A$($StartRow):$($ColumExcel)$($RowCount)").AutoFilter()  | Out-Null
-        }
         $UsedRange = $Sheet.usedRange                  
         $UsedRange.EntireColumn.AutoFit() | Out-Null
     }
@@ -975,13 +974,15 @@ Function CreateExcelSheetDHCP {
     ChangeFontExcelCell $Sheet $row $Column
     $row++
     $row = CreateExcelTabel $Sheet $rule
+    $row++
     if ($DHCPOptionsArray) {                
         $Column=1
         $excel.cells.item($row,$Column) = "Extra DHCP options"
         ChangeFontExcelCell $Sheet $row $Column
-        $row++     
+        $row++   
         $row = CreateExcelTabel $Sheet $DHCPOptionsArray   
     }
+    $row++
     if ($DHCPRangeArray) {
         #Add IP ranges
         $Column=1
@@ -996,7 +997,7 @@ Function CreateExcelSheetDHCP {
     if ($DHCPReservedAddressArray) {
         $excel.cells.item($row,$Column) = "Reserved Addresses"
         ChangeFontExcelCell $Sheet $row $Column
-        $row++      
+        $row++    
         $DHCPReservedAddressArray = $DHCPReservedAddressArray | Sort-Object ID  
         $row = CreateExcelTabel $Sheet $DHCPReservedAddressArray     
     }     
@@ -1014,16 +1015,16 @@ Function CreateExcelSheetDNSDatabase {
     $excel.cells.item($row,$Column) = $SheetName 
     ChangeFontExcelCell $Sheet $row $Column 
     $row=$row+2
-    $excel.cells.item($row,$Column) = "DNSDatabase"
+    $excel.cells.item($row,$Column) = "DNSServers"
     ChangeFontExcelCell $Sheet $row $Column
-    $row++       
-    $row = CreateExcelTabel $Sheet $ruleList
+    $row++    
+    $Row = CreateExcelTabel $Sheet $ruleList  
     if ($DNSEntryArray) {
         $excel.cells.item($row,$Column) = "DNS Entries"
         ChangeFontExcelCell $Sheet $row $Column
-        $row++      
+        $row++    
         $DNSEntryArray = $DNSEntryArray | Sort-Object ID  
-        $row = CreateExcelTabel $Sheet $DNSEntryArray       
+        $row = CreateExcelTabel $Sheet $DNSEntryArray             
     }
     $UsedRange = $Sheet.usedRange                  
     $UsedRange.EntireColumn.AutoFit() | Out-Null     
@@ -1065,6 +1066,7 @@ Function CreateExcelSheetVPNSSLSettings {
     ChangeFontExcelCell $Sheet $row $Column  
     $row=$row+2
     $row = CreateExcelTabel $Sheet $rulelist
+    $Row++
     if ($AuthenticationRuleArray) {
         $AuthenticationRuleArray = $AuthenticationRuleArray | Sort-Object ID 
         $row++   
@@ -1088,6 +1090,7 @@ Function CreateExcelSheetSSLwebportal {
     ChangeFontExcelCell $Sheet $row $Column  
     $row=$row+2
     $row = CreateExcelTabel $Sheet $rulelist
+    $row++
     if ($SplitDNSArray) {
         $SplitDNSArray = $SplitDNSArray | Sort-Object PortalName,ID
         $row++   
@@ -1201,7 +1204,7 @@ Function CreateExcelSheetBGP {
     }    
 }
 Function CreateExcelSheetOSPF {
-    #id $OSPFRouterID is "no-ospf" it has not been overwritten and OSPF is not used -> Do not create the sheet.
+    #if $OSPFRouterID is "no-ospf" it has not been overwritten and OSPF is not used -> Do not create the sheet.
     if ($OSPFRouterID -ne "no-ospf") {
         $row = 2
         $Sheet = $workbook.Worksheets.Add()
@@ -1228,9 +1231,9 @@ Function CreateExcelSheetOSPF {
             $Column=1
             $excel.cells.item($row,$Column) = "OSPF Networks"
             ChangeFontExcelCell $Sheet $row $Column 
-            $Row++      
+            $Row++     
             $row = CreateExcelTabel $Sheet $RouterNetworkArray 
-        }    
+        }  
         if ($RouterInterfaceArray) {
             $Column=1
             $excel.cells.item($row,$Column) = "OSPF Interfaces"
@@ -1238,9 +1241,11 @@ Function CreateExcelSheetOSPF {
             $Row++      
             $row = CreateExcelTabel $Sheet $RouterInterfaceArray
         } 
+        $row++
         $Column=1
         $excel.cells.item($row,$Column) = "OSPF Passive Interfaces"
         ChangeFontExcelCell $Sheet $row $Column 
+        $row++ 
         $Column++
         if ($OSPFPassiveInterface) {
             $OSPFPassiveInterfaceArray = $OSPFPassiveInterface.Split(",")
@@ -1257,7 +1262,8 @@ Function CreateExcelSheetOSPF {
             $Column=1
             $excel.cells.item($row,$Column) = "Redistribute routes"
             ChangeFontExcelCell $Sheet $row $Column
-            #Make the default that no routes are redistibuted. If there are redistubuted routes this field wil get overwritten.
+            $row++  
+            #Make the default that no routes are redistibuted. If there are redistibuted routes this field wil get overwritten.
             $excel.cells.item($row,$Column+1) = "none"   
             Foreach ($ArrayMember in $RouterRedistibuteArray) {
                 if ($ArrayMember.status -eq "enable") {
@@ -1413,6 +1419,9 @@ DO {
     Write-output ""
     $I++
 } While ($i -le 5)
+If ($SkipFilter) {
+    Write-Output "SkipFilter parmeter is set to True. Skipping filter function in Excel."
+}
 #Command to disable the more prompt when reading the fortigate configuration
 $SetOutputStandard = 'config system console
 set output standard
@@ -1423,7 +1432,7 @@ $SetOutputMore = 'config system console
 set output more
 end
 '
-$FortigateConfigArray = $fortigateConfig.Split(".")
+$FortigateConfigArray = $FortigateConfig.Split(".")
 Switch ($FortigateConfigArray[$FortigateConfigArray.Count-1]) {
     "cred" {
         if (Get-Module -ListAvailable -Name Posh-SSH) {
@@ -1436,7 +1445,7 @@ Switch ($FortigateConfigArray[$FortigateConfigArray.Count-1]) {
             exit 1
         }
         Write-Output "Reading credentialfile"
-        if (!(Test-Path($fortigateConfig))) {
+        if (!(Test-Path($FortigateConfig))) {
             Write-Output "Credential file does not exist -> Creating One."
             $FirewallIP = Read-Host "Enter FirewallIP or DNS name."
             $FirewallPort = Read-Host "Enter portnumber SSH is listening on. (Default 22)"
@@ -1453,10 +1462,10 @@ FWPassword;$FWPassword
 
   
 "@
-            $ConfigString | Set-Content $fortigateConfig
+            $ConfigString | Set-Content $FortigateConfig
         }
         $RequiredConfigValues = MakeArray FirewallIP FWUser FWPassword
-        $config = ParseConfigFile $RequiredConfigValues $fortigateConfig
+        $config = ParseConfigFile $RequiredConfigValues $FortigateConfig
         $FirewallIP = $config.FirewallIP
         $FWPassword = $config.FWPassword | ConvertTo-SecureString 
         if ($Config.FirewallPort) { $FirewallPort = $Config.FirewallPort }
@@ -1492,7 +1501,7 @@ FWPassword;$FWPassword
             Write-Output "[!] ERROR: Could not find FortiGate config file at $fortigateConfig."
             exit 1
         }
-        $loadedConfig = Get-Content $fortigateConfig
+        $loadedConfig = Get-Content $FortigateConfig
      }
      default {
         Write-Output "Extention needs to be .conf for a config file OR .cred for a credential file!"
@@ -1825,7 +1834,11 @@ foreach ($Line in $loadedConfig) {
                 "tagging" {
                     $SUBSection = $true
                     $SUBSectionConfig = "tagging"
-                }                
+                }    
+                "secondaryip" {
+                    $SUBSection = $true
+                    $SUBSectionConfig = "secondaryip"                   
+                }            
                 "system" {
                     switch($ConfigLineArray[2]) {
                         "admin" {
@@ -2572,7 +2585,7 @@ foreach ($Line in $loadedConfig) {
             else {            
                 if ($ConfigSection) {
                     if ($vdom) { 
-                        $VdomName = "-" + $vdom
+                        $VdomName = "_" + $vdom
                     }
                     else { $VdomName = "" }
                     switch ($ConfigSection) {  
@@ -2748,8 +2761,7 @@ foreach ($Line in $loadedConfig) {
                             CreateExcelSheet "VPN_Phase2$VdomName" $rulelist 
                         }
                         "Configvpnsslsettings" {
-                            $ruleList.Add($rule) | Out-Null 
-                            #CreateExcelSheet "VPN_SSLSettings$VdomName" $rulelist   
+                            $ruleList.Add($rule) | Out-Null  
                             CreateExcelSheetVPNSSLSettings
                         }
                         "Configvpnsslwebportal" {
