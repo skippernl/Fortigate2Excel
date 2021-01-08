@@ -334,15 +334,16 @@ Function InitRouterOSPFInterface {
 Function InitRouterPolicy {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
-    $InitRule | Add-Member -type NoteProperty -name src -Value ""
+    $InitRule | Add-Member -type NoteProperty -name action -Value ""
+    $InitRule | Add-Member -type NoteProperty -name comments -Value ""
     #default route has no data in config setting dst route to 0.0.0.0/0 it gets overwritten if needed
     $InitRule | Add-Member -type NoteProperty -name dst -Value "0.0.0.0/0"
-    $InitRule | Add-Member -type NoteProperty -name action -Value ""
-    $InitRule | Add-Member -type NoteProperty -name srcaddr -Value ""
     $InitRule | Add-Member -type NoteProperty -name dstaddr -Value ""
     $InitRule | Add-Member -type NoteProperty -name gateway -Value ""
     $InitRule | Add-Member -type NoteProperty -name output-device -Value ""
-    $InitRule | Add-Member -type NoteProperty -name comments -Value ""
+    $InitRule | Add-Member -type NoteProperty -name src -Value ""
+    $InitRule | Add-Member -type NoteProperty -name srcaddr -Value ""
+    $InitRule | Add-Member -type NoteProperty -name status -Value "enable"
     return $InitRule
 }
 Function InitRouterRedistribute {
@@ -355,15 +356,16 @@ Function InitRouterRedistribute {
 Function InitRouterStatic {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name blackhole -Value ""
+    $InitRule | Add-Member -type NoteProperty -name comment -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Device -Value ""
+    $InitRule | Add-Member -type NoteProperty -name distance -Value ""
     #default route has no data in config setting dst route to 0.0.0.0/0 it gets overwritten if needed
     $InitRule | Add-Member -type NoteProperty -name dst -Value "0.0.0.0/0"
     $InitRule | Add-Member -type NoteProperty -name dstaddr -Value ""
     $InitRule | Add-Member -type NoteProperty -name gateway -Value ""    
-    $InitRule | Add-Member -type NoteProperty -name Device -Value ""
-    $InitRule | Add-Member -type NoteProperty -name comment -Value ""
-    $InitRule | Add-Member -type NoteProperty -name blackhole -Value ""
-    $InitRule | Add-Member -type NoteProperty -name distance -Value ""
     $InitRule | Add-Member -type NoteProperty -name priority -Value ""
+    $InitRule | Add-Member -type NoteProperty -name status -Value "enable"
     $InitRule | Add-Member -type NoteProperty -name virtual-wan-link -Value ""
     return $InitRule
 }
