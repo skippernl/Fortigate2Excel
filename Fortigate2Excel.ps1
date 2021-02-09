@@ -935,8 +935,7 @@ Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
         $row++
     }    
     #No need to filer if there is only one row.
-    if (!($SkipFilter) -and ($ActiveArray.Count -gt 1)) {
-        #$ColumCount = $NoteProperties.count
+    if (!($Global:SkipFilter) -and ($ActiveArray.Count -gt 1)) {
         $ColumExcel = Convert-NumberToA1 $NoteProperties.count
         $Sheet.Range("A$($StartRow):$($ColumExcel)$($Row-1)").AutoFilter()  | Out-Null
     }
@@ -963,6 +962,11 @@ Function CreateExcelSheetDHCP {
     $row = 2
     $Sheet = $workbook.Worksheets.Add()
     PlaceLinkToToC $Sheet
+    #Remember Skipfilter when making a sheet with multiple arrays and create a filter on only one.
+    if (!$SkipFilter) {
+        $RemberSkipFilter = $true
+        $SkipFilter = $true
+    }
     if ($DHCPIP4) { $SheetName = "DHCP_IPV4_" }
     else { $SheetName = "DHCP_IPV6_" }
     $SheetName = $SheetName + $rule.Interface + "_" + $rule.ID
@@ -991,20 +995,33 @@ Function CreateExcelSheetDHCP {
         $excel.cells.item($row,$Column) = "DHCP Range"
         ChangeFontExcelCell $Sheet $row $Column
         $row++
+        if ($RemberSkipFilter -and $DHCPReservedAddressArray) {
+            $SkipFilter = $false
+        }
         $DHCPRangeArray = $DHCPRangeArray | Sort-Object ID 
         $row = CreateExcelTabel $Sheet $DHCPRangeArray
         $row++ 
+        $SkipFilter = $true
     }
     $Column=1
     if ($DHCPReservedAddressArray) {
         $excel.cells.item($row,$Column) = "Reserved Addresses"
         ChangeFontExcelCell $Sheet $row $Column
-        $row++    
+        $row++  
+        if ($RemberSkipFilter) {
+            $SkipFilter = $false
+        }  
         $DHCPReservedAddressArray = $DHCPReservedAddressArray | Sort-Object ID  
+        if ($RemberSkipFilter) {
+            $SkipFilter = $false
+        }
         $row = CreateExcelTabel $Sheet $DHCPReservedAddressArray     
     }     
     $UsedRange = $Sheet.usedRange                  
     $UsedRange.EntireColumn.AutoFit() | Out-Null    
+    if ($RemberSkipFilter) {
+        $SkipFilter = $false
+    }
 }
 Function CreateExcelSheetDNSDatabase {
     $row = 2
@@ -1208,6 +1225,11 @@ Function CreateExcelSheetBGP {
 Function CreateExcelSheetOSPF {
     #if $OSPFRouterID is "no-ospf" it has not been overwritten and OSPF is not used -> Do not create the sheet.
     if ($OSPFRouterID -ne "no-ospf") {
+        #Remember Skipfilter when making a sheet with multiple arrays and create a filter on only one.
+        if (!$SkipFilter) {
+            $RemberSkipFilter = $true
+            $SkipFilter = $true
+        }
         $row = 2
         $Sheet = $workbook.Worksheets.Add()
         PlaceLinkToToC $Sheet
@@ -1237,11 +1259,17 @@ Function CreateExcelSheetOSPF {
             $row = CreateExcelTabel $Sheet $RouterNetworkArray 
         }  
         if ($RouterInterfaceArray) {
+            if ($RemberSkipFilter) {
+                $SkipFilter = $false
+            }
             $Column=1
             $excel.cells.item($row,$Column) = "OSPF Interfaces"
             ChangeFontExcelCell $Sheet $row $Column 
             $Row++      
             $row = CreateExcelTabel $Sheet $RouterInterfaceArray
+            if ($RemberSkipFilter) {
+                $SkipFilter = $true
+            }
         } 
         $row++
         $Column=1
@@ -1284,6 +1312,9 @@ Function CreateExcelSheetOSPF {
         }     
         $UsedRange = $Sheet.usedRange                  
         $UsedRange.EntireColumn.AutoFit() | Out-Null  
+        if ($RemberSkipFilter) {
+            $SkipFilter = $false
+        }
     }    
 }
 Function GetNumber ($NumberString) {
@@ -1421,7 +1452,7 @@ DO {
     Write-output ""
     $I++
 } While ($i -le 5)
-If ($SkipFilter) {
+If ($Global:SkipFilter) {
     Write-Output "SkipFilter parmeter is set to True. Skipping filter function in Excel."
 }
 #Command to disable the more prompt when reading the fortigate configuration
