@@ -299,6 +299,38 @@ Function InitRouterBGP {
     $InitRule | Add-Member -type NoteProperty -name log-neighbor-changes -Value ""
     return $InitRule
 }
+Function InitRouterISIS {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name is-type -Value "none" 
+    $InitRule | Add-Member -type NoteProperty -name adv-passive-only -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name adv-passive-only6 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name auth-mode-l1 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name auth-mode-l2 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name auth-password-l1 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name auth-password-l2 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name auth-sendonly-l1 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name auth-sendonly-l2 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name ignore-lsp-errors -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name lsp-gen-interval-l1 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name lsp-gen-interval-l2 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name lsp-refresh-interval -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name max-lsp-lifetime -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name spf-interval-exp-l1 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name spf-interval-exp-l2 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name dynamic-hostname -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name adjacency-check -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name adjacency-check6 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name overload-bit -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name overload-bit-on-startup -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name default-originate -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name default-originate6 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name metric-style -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name redistribute-l1 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name redistribute-l2 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name redistribute6-l1 -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name redistribute6-l2 -Value "" 
+    return $InitRule
+}
 Function InitRouterDistributeList {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
@@ -822,7 +854,7 @@ Function ConvertHaInterfaces ($HAline) {
      }
      else { $TempLine = $TempLine + "),(" }
     }
-    $TempLine = $TempLine.Substring(0,$TempLine.Length-1)
+    $TempLine = $TempLine.Substring(0,$TempLine.Length-3)
     $TempLine = $TempLine + ")"
     Return $TempLine
 }
@@ -1204,6 +1236,13 @@ Function CreateExcelSheetBGP {
             $Row++      
             $row = CreateExcelTabel $Sheet $RouterNeighborArray 
         }
+        if ($RouterNetworkArray) {
+            $Column=1
+            $excel.cells.item($row,$Column) = "Networks"
+            ChangeFontExcelCell $Sheet $row $Column
+            $Row++  
+            $row = CreateExcelTabel $Sheet $RouterNetworkArray
+        }
         if ($RouterRedistibuteArray) {
             $Column=1
             $excel.cells.item($row,$Column) = "Redistribute routes"
@@ -1221,6 +1260,37 @@ Function CreateExcelSheetBGP {
         $UsedRange = $Sheet.usedRange                  
         $UsedRange.EntireColumn.AutoFit() | Out-Null  
     }    
+}
+Function CreateExcelSheetISIS {
+    if ($Rule."is-type" -ne "none") {
+        $row = 2
+        $Sheet = $workbook.Worksheets.Add()
+        PlaceLinkToToC $Sheet
+        $SheetName = "Router_$RouterSection$VdomName"
+        $SheetName = $SheetName.Replace("-","_")
+        $Sheet.Name = $SheetName
+        $Column = 1   
+        $excel.cells.item($row,$Column) = $SheetName 
+        ChangeFontExcelCell $Sheet $row $Column  
+        $row=$row+2
+        $row = CreateExcelTabel $Sheet $rule
+        if ($RouterRedistibuteArray) {
+            $Column=1
+            $excel.cells.item($row,$Column) = "Redistribute routes"
+            ChangeFontExcelCell $Sheet $row $Column
+            #Make the default that no routes are redistibuted. If there are redistubuted routes this field wil get overwritten.
+            $excel.cells.item($row,$Column+1) = "none"   
+            Foreach ($ArrayMember in $RouterRedistibuteArray) {
+                if ($ArrayMember.status -eq "enable") {
+                    $Column++
+                    $excel.cells.item($row,$Column) = $ArrayMember.Redistribute
+                }                        
+            }
+            $Row++ 
+        }       
+        $UsedRange = $Sheet.usedRange                  
+        $UsedRange.EntireColumn.AutoFit() | Out-Null   
+}  
 }
 Function CreateExcelSheetOSPF {
     #if $OSPFRouterID is "no-ospf" it has not been overwritten and OSPF is not used -> Do not create the sheet.
@@ -1354,7 +1424,6 @@ Function ParseConfigFile {
     Get-Content $PconfigFile | Where-Object { $_ -match '\S' } | # Skip blank (whitespace only) lines.
         Foreach-Object { $key, $value = $_ -split '\s*;\s*'; $config.$key = $value 
     }
-    #$requiredValues = MakeArray VCenterIP VCenterNaam VCUser VCPassword 
     # Initialize this to false and exit after the loop if a required value is missing.
     [bool] $missingRequiredValue = $false
     foreach ($requiredValue in $requiredValues) {
@@ -1648,7 +1717,8 @@ $VirtualWanLinkHealthCheckArray = [System.Collections.ArrayList]@()
 $VirtualWanLinkServiceArray = [System.Collections.ArrayList]@()
 #Make sure $OSPFRouterID has a known value
 $OSPFRouterID = "no-ospf"
-$SkipExportProperties = MakeArray "passwd" "password" "psksecret" "secret"  
+#Set all properties that contain password to be excluded from the excel file.
+$SkipExportProperties = MakeArray "passwd" "password" "psksecret" "secret" "ppk-secret" "auth-password-l1" "auth-password-l2"
 foreach ($Line in $loadedConfig) {
     $Proc = $Counter/$MaxCounter*100
     $ProcString = $Proc.ToString("0.00")
@@ -1818,6 +1888,13 @@ foreach ($Line in $loadedConfig) {
                     $RouterRedistribute = InitRouterRedistribute
                     $RouterRedistribute | Add-Member -MemberType NoteProperty -Name "Redistribute" -Value $Value -force
                 }
+                "redistribute6" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "routerredistribute"
+                    $Value = CleanupLine $ConfigLine
+                    $RouterRedistribute = InitRouterRedistribute
+                    $RouterRedistribute | Add-Member -MemberType NoteProperty -Name "Redistribute" -Value $Value -force
+                }                
                 "reserved-address" {
                     $SUBSection = $True
                     $SUBSectionConfig = "dhcpreservedaddress"                 
@@ -1836,6 +1913,11 @@ foreach ($Line in $loadedConfig) {
                             #Init RouterNeighborOLD value (config has two concecutive next statements)
                             $RouterNeighborOLD = InitRouterNeighbor                     
                         }
+                        "isis" {
+                            $ConfigSection = "ConfigRouterISIS"
+                            Write-Output "Config router isis line found." 
+                            $rule = InitRouterISIS                              
+                        }
                         "static" {
                             $ConfigSection = "ConfigRouterStatic"
                             Write-Output "Config router static line found."
@@ -1845,7 +1927,7 @@ foreach ($Line in $loadedConfig) {
                             Write-Output "Config router policy line found."
                         }
                         default {
-                            #Router section default (redistribute section)
+                            #Router section default
                             $RouterSection = $ConfigLineArray[2]
                             $ConfigSection = "ConfigRouter$RouterSection"
                             Write-Output "Config router $RouterSection found."
@@ -2317,7 +2399,12 @@ foreach ($Line in $loadedConfig) {
                             $RouterNeighbor | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
                         "RouterNetwork" {
-                            $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3]
+                            if ($ConfigLineArray[1] -eq "prefix") {
+                                $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3]
+                            }
+                            else {
+                                $Value = $ConfigLineArray[2]
+                            }
                             $RouterNetwork |  Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
                         "RouterRedistribute" {
@@ -2459,7 +2546,13 @@ foreach ($Line in $loadedConfig) {
                             else {
                                  $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                             }                        
-                        }                        
+                        }       
+                        "ConfigRouterISIS" {
+                           if (($ConfigLineArray[1] -eq 'spf-interval-exp-l1') -or ($ConfigLineArray[1] -eq 'spf-interval-exp-l2')) {
+                               $Value = $ConfigLineArray[2] + " - " + $ConfigLineArray[3]
+                           }
+                           $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                        }                 
                         "ConfigRouterOSPF" {
                             if ($ConfigLineArray[1] -eq 'router-id') { $OSPFRouterID = $ConfigLineArray[2] }
                             elseif ($ConfigLineArray[1] -eq 'passive-Interface') { $OSPFPassiveInterface = $Value }
@@ -2598,6 +2691,9 @@ foreach ($Line in $loadedConfig) {
                         "oschecklist" {
                             $OSCheckListArray.Add($OSCheckListRule)  | Out-Null
                         }
+                        "routerredistribute" { 
+                            $RouterRedistibuteArray.Add($RouterRedistribute)  | Out-Null 
+                        }
                         "tagging" {
                             $Value = ConvertTagArrayToLine $ObjectTagArray
                             $rule | Add-Member -MemberType NoteProperty -Name tag -Value $Value -force
@@ -2606,9 +2702,9 @@ foreach ($Line in $loadedConfig) {
                     }
                     $SUBSection = $False
                     switch ($ConfigSection) {
-                        "routerredistribute" { 
-                            $RouterRedistibuteArray.Add($RouterRedistribute)  | Out-Null 
-                        }
+#                        "routerredistribute" { 
+#                            $RouterRedistibuteArray.Add($RouterRedistribute)  | Out-Null 
+#                        }
                         "VIPRealservers" {
                             $ruleList.Add($rule) | Out-Null 
                         } 
@@ -2698,6 +2794,12 @@ foreach ($Line in $loadedConfig) {
                                 "ConfigRouterBGP" {
                                     CreateExcelSheetBGP                                    
                                 }
+                                "ConfigRouterBGP6" {
+                                    CreateExcelSheetBGP                                    
+                                }
+                                "ConfigRouterISIS" {
+                                    CreateExcelSheetISIS                                    
+                                }                                
                                 "ConfigRouterOSPF" {
                                     CreateExcelSheetOSPF
                                     #reset router-ID just in case OSPF6 is not used
@@ -2705,8 +2807,8 @@ foreach ($Line in $loadedConfig) {
                                     $RouterNetworkArray = [System.Collections.ArrayList]@()
                                     $RouterInterfaceArray = [System.Collections.ArrayList]@()
                                     $OSPFPassiveInterface = [System.Collections.ArrayList]@()
-                                    $RouterRedistibuteArray = [System.Collections.ArrayList]@()
-                                    $RouterDistibuteListArray = [System.Collections.ArrayList]@()   
+#                                    $RouterRedistibuteArray = [System.Collections.ArrayList]@()
+#                                    $RouterDistibuteListArray = [System.Collections.ArrayList]@()   
                                     $OSPFInterface = [System.Collections.ArrayList]@()              
                                 }
                                 "ConfigRouterOSPF6" {
