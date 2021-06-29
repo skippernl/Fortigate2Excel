@@ -165,6 +165,7 @@ Function InitFirewallRule {
     $InitRule | Add-Member -type NoteProperty -name comments -Value ""
     $InitRule | Add-Member -type NoteProperty -name dstaddr -Value ""
     $InitRule | Add-Member -type NoteProperty -name dstintf -Value ""
+    $InitRule | Add-Member -type NoteProperty -name groups -Value ""
     $InitRule | Add-Member -type NoteProperty -name internet-service -Value ""
     $InitRule | Add-Member -type NoteProperty -name internet-service-id -Value ""
     #Default is disable
@@ -434,6 +435,17 @@ Function InitSystemAdmin {
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name accprofile -Value ""
     $InitRule | Add-Member -type NoteProperty -name comments -Value ""
+    $InitRule | Add-Member -type NoteProperty -name email-to -Value ""
+    $InitRule | Add-Member -type NoteProperty -name force-password-change -Value ""
+    $InitRule | Add-Member -type NoteProperty -name fortitoken -Value ""
+    $InitRule | Add-Member -type NoteProperty -name guest-auth -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ip6trustedhosts -Value ""
+    $InitRule | Add-Member -type NoteProperty -name peer-auth -Value ""
+    $InitRule | Add-Member -type NoteProperty -name remote-auth -Value ""
+    $InitRule | Add-Member -type NoteProperty -name schedule -Value ""
+    $InitRule | Add-Member -type NoteProperty -name sms-phone -Value ""
+    $InitRule | Add-Member -type NoteProperty -name sms-server -Value ""
+    $InitRule | Add-Member -type NoteProperty -name two-factor -Value ""
     $InitRule | Add-Member -type NoteProperty -name vdom -Value ""
     $InitRule | Add-Member -type NoteProperty -name trustedhosts -Value ""
     return $InitRule 
@@ -615,6 +627,40 @@ Function InitSystemSettings {
 
     return $InitRule
 }
+
+Function InitSystemSNMPSysInfo {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name status -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name description -Value ""
+    $InitRule | Add-Member -type NoteProperty -name contact-info -Value ""
+    $InitRule | Add-Member -type NoteProperty -name location -Value ""
+    return $InitRule
+}
+
+Function InitSystemSNMPCommunity {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name hosts -Value ""
+    return $InitRule
+}
+
+Function InitSystemSNMPCommunityHosts {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name IP -Value ""
+    return $InitRule
+}
+
+Function InitSystemSNMPUser {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name notify-hosts -Value ""
+    $InitRule | Add-Member -type NoteProperty -name security-level -Value ""
+    $InitRule | Add-Member -type NoteProperty -name auth-pwd -Value ""
+    return $InitRule
+}
+
 Function InitSystemVirtualWanLink {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name status -Value ""
@@ -966,7 +1012,7 @@ Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
         }                      
         $row++
     }    
-    #No need to filer if there is only one row.
+    #No need to filter if there is only one row.
     if (!($Global:SkipFilter) -and ($ActiveArray.Count -gt 1)) {
         $ColumExcel = Convert-NumberToA1 $NoteProperties.count
         $Sheet.Range("A$($StartRow):$($ColumExcel)$($Row-1)").AutoFilter()  | Out-Null
@@ -1056,29 +1102,31 @@ Function CreateExcelSheetDHCP {
     }
 }
 Function CreateExcelSheetDNSDatabase {
-    $row = 2
-    $Sheet = $workbook.Worksheets.Add()
-    PlaceLinkToToC $Sheet
-    $SheetName = "DNSDatabase$VdomName"
-    $Sheet.Name = $SheetName
-    $SheetName = $SheetName.Replace("-","_")
-    $Column = 1   
-    $excel.cells.item($row,$Column) = $SheetName 
-    ChangeFontExcelCell $Sheet $row $Column 
-    $row=$row+2
-    $excel.cells.item($row,$Column) = "DNSServers"
-    ChangeFontExcelCell $Sheet $row $Column
-    $row++    
-    $Row = CreateExcelTabel $Sheet $ruleList  
-    if ($DNSEntryArray) {
-        $excel.cells.item($row,$Column) = "DNS Entries"
+    if ($ruleList) {
+        $row = 2
+        $Sheet = $workbook.Worksheets.Add()
+        PlaceLinkToToC $Sheet
+        $SheetName = "DNSDatabase$VdomName"
+        $Sheet.Name = $SheetName
+        $SheetName = $SheetName.Replace("-","_")
+        $Column = 1   
+        $excel.cells.item($row,$Column) = $SheetName 
+        ChangeFontExcelCell $Sheet $row $Column 
+        $row=$row+2
+        $excel.cells.item($row,$Column) = "DNSServers"
         ChangeFontExcelCell $Sheet $row $Column
         $row++    
-        $DNSEntryArray = $DNSEntryArray | Sort-Object ID  
-        $row = CreateExcelTabel $Sheet $DNSEntryArray             
-    }
-    $UsedRange = $Sheet.usedRange                  
-    $UsedRange.EntireColumn.AutoFit() | Out-Null     
+        $Row = CreateExcelTabel $Sheet $ruleList  
+        if ($DNSEntryArray) {
+            $excel.cells.item($row,$Column) = "DNS Entries"
+            ChangeFontExcelCell $Sheet $row $Column
+            $row++    
+            $DNSEntryArray = $DNSEntryArray | Sort-Object ID  
+            $row = CreateExcelTabel $Sheet $DNSEntryArray             
+        }
+        $UsedRange = $Sheet.usedRange                  
+        $UsedRange.EntireColumn.AutoFit() | Out-Null 
+    }    
 }
 
 Function CreateExcelSheetHA {
@@ -1387,6 +1435,46 @@ Function CreateExcelSheetOSPF {
         }
     }    
 }
+Function CreateExcelSheetSNMP {
+    $row = 2
+    $Sheet = $workbook.Worksheets.Add()
+    PlaceLinkToToC $Sheet
+    $SheetName = "SNMP$VdomName"
+    $SheetName = $SheetName.Replace("-","_")
+    $Sheet.Name = $SheetName
+    $Column=1
+    $excel.cells.item($row,$Column) = $SheetName
+    ChangeFontExcelCell $Sheet $row $Column  
+    $row=$row+2 
+    #Enter SNMP Sysinfo to the sheet
+    $excel.cells.item($row,$Column) = "System Info"
+    $Row++
+    $excel.cells.item($row,$Column) = "Status"
+    $excel.cells.item($row,$Column+1) = $SNMPSysinfo.Status
+    $Row++
+    $excel.cells.item($row,$Column) = "Description"
+    $excel.cells.item($row,$Column+1) = $SNMPSysinfo.Description
+    $Row++
+    $excel.cells.item($row,$Column) = "Contact"
+    $excel.cells.item($row,$Column+1) = $SNMPSysinfo."Contact-info"
+    $Row++
+    $excel.cells.item($row,$Column) = "Location"
+    $excel.cells.item($row,$Column+1) = $SNMPSysinfo.Location
+    $Row++
+    if ($SNMPCommunities) {
+        $excel.cells.item($row,$Column) = "SNMP v1/v2"
+        $Row++
+        $row = CreateExcelTabel $Sheet $SNMPCommunities
+    }
+    $Column=1
+    if ($SNMPUsers) {
+        $excel.cells.item($row,$Column) = "SNMP v3"
+        $Row++
+        $row = CreateExcelTabel $Sheet $SNMPUsers
+    }
+    $UsedRange = $Sheet.usedRange                  
+    $UsedRange.EntireColumn.AutoFit() | Out-Null 
+}
 Function GetNumber ($NumberString) {
     [int]$IntNum = [convert]::ToInt32($NumberString, 10)
     return $IntNum
@@ -1694,6 +1782,7 @@ $FirewallTypeArray = $FWTypeVersion.Split("=")
 $FWVersion = $FirewallInfoArray[2]
 $FWType = $FirewallTypeArray[1]
 $SUBSection = $False
+$SNMPFound = $False
 #Creating empty Arrays
 $ruleList = [System.Collections.ArrayList]@()
 $AuthenticationRuleArray = [System.Collections.ArrayList]@()
@@ -1711,6 +1800,8 @@ $RouterInterfaceArray = [System.Collections.ArrayList]@()
 $RouterNetworkArray = [System.Collections.ArrayList]@()
 $RouterDistibuteListArray = [System.Collections.ArrayList]@()
 $RouterNeighborArray = [System.Collections.ArrayList]@()
+$SNMPCommunities = [System.Collections.ArrayList]@()
+$SNMPUsers = [System.Collections.ArrayList]@()
 $SplitDNSArray = [System.Collections.ArrayList]@()
 $VirtualWanLinkMemberArray = [System.Collections.ArrayList]@()
 $VirtualWanLinkHealthCheckArray = [System.Collections.ArrayList]@()
@@ -1718,7 +1809,7 @@ $VirtualWanLinkServiceArray = [System.Collections.ArrayList]@()
 #Make sure $OSPFRouterID has a known value
 $OSPFRouterID = "no-ospf"
 #Set all properties that contain password to be excluded from the excel file.
-$SkipExportProperties = MakeArray "passwd" "password" "psksecret" "secret" "ppk-secret" "auth-password-l1" "auth-password-l2"
+$SkipExportProperties = MakeArray "passwd" "password" "psksecret" "secret" "ppk-secret" "auth-password-l1" "auth-password-l2" "auth-pwd"
 foreach ($Line in $loadedConfig) {
     $Proc = $Counter/$MaxCounter*100
     $ProcString = $Proc.ToString("0.00")
@@ -1836,6 +1927,10 @@ foreach ($Line in $loadedConfig) {
                 "health-check" {
                     $SUBSection = $True
                     $SUBSectionConfig = "virtualwanlinkhealthcheck"                 
+                }
+                "hosts" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "ConfigSystemSNMPCommunityHosts"                    
                 }     
                 "ipv6" {
                     $SUBSection = $True
@@ -2010,6 +2105,26 @@ foreach ($Line in $loadedConfig) {
                         "session-helper" {
                             $ConfigSection = "ConfigSystemSessionHelper"
                             Write-Output "Config system session-helper line found."
+                        }
+                        "snmp" {
+                           switch($ConfigLineArray[3]) {
+                               "sysinfo" {
+                                   $ConfigSection = "ConfigSystemSNMPSysinfo"
+                                   $rule = InitSystemSNMPSysInfo
+                                   $SNMPFound=$true
+                                   Write-Output "Config system snmp sysinfo line found."
+                               }
+                               "community" {
+                                   $ConfigSection = "ConfigSystemSNMPCommunity"
+                                   $SNMPFound=$true
+                                   Write-Output "Config system snmp community line found."
+                               }
+                               "user" {
+                                   $ConfigSection = "ConfigSystemSNMPUser"
+                                   $SNMPFound=$true
+                                   Write-Output "Config system snmp user line found."
+                               }
+                           }
                         }
                         "virtual-wan-link" {
                             $ConfigSection = "ConfigSystemVirtualWanLink"
@@ -2205,6 +2320,7 @@ foreach ($Line in $loadedConfig) {
                         "ConfigSystemAdmin" {
                             $rule = InitSystemAdmin
                             $TrustedHosts = ""
+                            $IP6TrustedHosts = ""
                             $rule | Add-Member -MemberType NoteProperty -Name Name -Value $Value -force
                         }      
                         "ConfigSystemDHCP" {
@@ -2308,6 +2424,16 @@ foreach ($Line in $loadedConfig) {
                             $IDNumber = GetNumber($Value)
                             $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
+                        "ConfigSystemSNMPCommunity" {
+                            $rule = InitSystemSNMPCommunity
+                            $IDNumber = GetNumber($Value)
+                            $SNMPHosts = ""
+                            $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
+                        }
+                        "ConfigSystemSNMPUser" {
+                            $rule = InitSystemSNMPUser
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
+                        }                        
                         "ConfigSystemZone" {
                             $rule = InitSystemInterface
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force                            
@@ -2427,6 +2553,15 @@ foreach ($Line in $loadedConfig) {
                             }
                             else { $RouterAccessList | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force }
                         }
+                        "ConfigSystemSNMPCommunityHosts" {
+                            $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3]
+                            if ($SNMPHosts) {
+                                $SNMPHosts = $SNMPHosts + "," + $Value
+                            }
+                            else {
+                                $SNMPHosts = $Value
+                            }
+                        }                        
                         "splitdns" {
                             $SplitDNS | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
@@ -2491,6 +2626,13 @@ foreach ($Line in $loadedConfig) {
                                 }
                                 else { $TrustedHosts = $Value }
                             }
+                            elseif ($ConfigLineArray[1].StartsWith("ip6-trusthost")) {
+                                #$Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3]
+                                if ($IP6TrustedHosts) {
+                                    $IP6TrustedHosts = $IP6TrustedHosts + "," + $ConfigLineArray[2]
+                                }
+                                else { $IP6TrustedHosts = $Value }
+                            }                            
                             else { 
                                 $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                             }
@@ -2654,8 +2796,10 @@ foreach ($Line in $loadedConfig) {
                     switch ($ConfigSection) {
                         "ConfigSystemAdmin" {
                             $Rule.TrustedHosts = $TrustedHosts
+                            $Rule.IP6TrustedHosts = $IP6TrustedHosts
                             $rulelist.Add($rule) | Out-Null 
                             $TrustedHosts = "" 
+                            $IP6TrustedHosts = ""
                         }
                         "ConfigSystemDHCP" {
                             $DHCPIP4=$true
@@ -2675,6 +2819,13 @@ foreach ($Line in $loadedConfig) {
                             if ($SUBSectionConfig -ne "VIPRealservers") {
                                 $ruleList.Add($rule)  | Out-Null 
                             }
+                        }
+                        "ConfigSystemSNMPCommunity" {
+                            $rule | Add-Member -MemberType NoteProperty -Name hosts -Value $SNMPHosts -force
+                            $SNMPCommunities.Add($rule)  | Out-Null 
+                        }
+                        "ConfigSystemSNMPUser" {
+                            $SNMPUsers.Add($rule)  | Out-Null 
                         }
                         Default { $ruleList.Add($rule) | Out-Null  }
                     }   # switch ($ConfigSection)  
@@ -2702,9 +2853,6 @@ foreach ($Line in $loadedConfig) {
                     }
                     $SUBSection = $False
                     switch ($ConfigSection) {
-#                        "routerredistribute" { 
-#                            $RouterRedistibuteArray.Add($RouterRedistribute)  | Out-Null 
-#                        }
                         "VIPRealservers" {
                             $ruleList.Add($rule) | Out-Null 
                         } 
@@ -2864,6 +3012,16 @@ foreach ($Line in $loadedConfig) {
                             $ruleList = $ruleList | Sort-Object ID
                             CreateExcelSheet "Session_Helper$VdomName" $ruleList
                         }
+                        "ConfigSystemSNMPSysinfo" {
+                            $SNMPSysinfo = $rule
+                        }
+                        "ConfigSystemSNMPCommunity" {
+                            $ruleList = $ruleList  | Sort-Object Name
+                            $SNMPCommunities = $ruleList
+                        }
+                        "ConfigSystemSNMPUser" {
+                            $SNMPUsers = $SNMPUsers  | Sort-Object Name
+                        }
                         "ConfigSystemVirtualWanLink" {
                             CreateExcelSheetVirtualWanLink
                         }
@@ -2912,6 +3070,10 @@ foreach ($Line in $loadedConfig) {
         }    # "end"
     } # switch($ConfigLineArray[0])
 }    # foreach ($Line in $loadedConfig)
+#Check if we have SNMP info (This is in three separate section so now is the time to create the sheet if we have info)
+if ($SNMPFound) {
+    CreateExcelSheetSNMP
+}
 #make sure that the first sheet that is opened by Excel is the Table of Content sheet.
 $TocSheet.Activate()
 Write-Output "Creating Table of Contents"
