@@ -623,8 +623,7 @@ Function InitSystemSessionHelper {
 }
 Function InitSystemSettings {
     $InitRule = New-Object System.Object;
-#There is only ONE set of this settting. Therefore is is not needed to define the NoteProperties.
-
+    #There is only ONE set of this settting. Therefore is is not needed to define the NoteProperties.
     return $InitRule
 }
 
@@ -729,7 +728,7 @@ Function InitVirtualWanLinkMember {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""    
     $InitRule | Add-Member -type NoteProperty -name interface -Value ""
-    $InitRule | Add-Member -type NoteProperty -name weight -Value ""
+    $InitRule | Add-Member -type NoteProperty -name weight -Value "1"
     return $InitRule   
 }
 Function InitVirtualWanLinkService {
@@ -739,6 +738,8 @@ Function InitVirtualWanLinkService {
     $InitRule | Add-Member -type NoteProperty -name member -Value ""
     $InitRule | Add-Member -type NoteProperty -name dst -Value ""
     $InitRule | Add-Member -type NoteProperty -name src -Value ""
+    $InitRule | Add-Member -type NoteProperty -name priority-members -Value ""
+    $InitRule | Add-Member -type NoteProperty -name use-shortcut-sla -Value ""
     return $InitRule  
 }
 Function InitVpnIpsecPhase1 {
@@ -969,21 +970,20 @@ Function Convert-NumberToA1 {
     See synopsis. 
     .PARAMETER number 
     Any number between 1 and 2147483647 
-    #> 
-     
+    #>
     Param([parameter(Mandatory=$true)] 
-          [int]$number) 
-   
+        [int]$number) 
+
     $a1Value = $null 
     While ($number -gt 0) { 
-      $multiplier = [int][system.math]::Floor(($number / 26)) 
-      $charNumber = $number - ($multiplier * 26) 
-      If ($charNumber -eq 0) { $multiplier-- ; $charNumber = 26 } 
-      $a1Value = [char]($charNumber + 64) + $a1Value 
-      $number = $multiplier 
+    $multiplier = [int][system.math]::Floor(($number / 26)) 
+    $charNumber = $number - ($multiplier * 26) 
+    If ($charNumber -eq 0) { $multiplier-- ; $charNumber = 26 } 
+        $a1Value = [char]($charNumber + 64) + $a1Value 
+        $number = $multiplier 
     } 
     Return $a1Value 
-  }
+}
 #Function CreateExcelTabel ($ActiveSheet, $ActiveArray)
 #This Function Creates the Excel tabel 
 #$ActiveSheet is the used Excelsheet
@@ -1049,6 +1049,10 @@ Function CreateExcelSheetDHCP {
     else { $SheetName = "DHCP_IPV6_" }
     $SheetName = $SheetName + $rule.Interface + "_" + $rule.ID
     $SheetName = $SheetName.Replace("-","_")
+    if ($SheetName.Length -gt 31) {
+        Write-output "Sheetname cannot be longer that 32 caracters shorting name to fit."
+        $SheetName = $SheetName.Substring(0,31)
+    }
     $Sheet.Name = $SheetName
     $Column = 1   
     $excel.cells.item($row,$Column) = $SheetName 
@@ -1226,20 +1230,27 @@ Function CreateExcelSheetVirtualWanLink {
     $row = 2
     $Sheet = $workbook.Worksheets.Add()
     PlaceLinkToToC $Sheet
-    $SheetName = "Virtual_Wan_Link"
+    if ($SDWAN) {
+        $SheetName = "SDWAN$VdomName"
+        $ExcelSDWANText = "SDWAN"
+    }
+    else {
+        $SheetName = "Virtual_Wan_Link$VdomName"
+        $ExcelSDWANText = "Virtual Wan"
+    }
     $Sheet.Name = $SheetName
     $Column = 1   
     $excel.cells.item($row,$Column) = $SheetName 
     ChangeFontExcelCell $Sheet $row $Column 
     $row=$row+2
-    $excel.cells.item($row,$Column) = "Global Virtual Wan Link settings"
+    $excel.cells.item($row,$Column) = "Global $ExcelSDWANText Link settings"
     ChangeFontExcelCell $Sheet $row $Column
     $row++
     $row = CreateExcelTabel $Sheet $rule 
     if ($VirtualWanLinkMemberArray) {                
         $row++   
         $Column=1
-        $excel.cells.item($row,$Column) = "Link WAN members"
+        $excel.cells.item($row,$Column) = "Link $ExcelSDWANText members"
         ChangeFontExcelCell $Sheet $row $Column
         $row++    
         $row = CreateExcelTabel $Sheet $VirtualWanLinkMemberArray  
@@ -1247,7 +1258,7 @@ Function CreateExcelSheetVirtualWanLink {
     if ($VirtualWanLinkHealthCheckArray) {                
         $row++   
         $Column=1
-        $excel.cells.item($row,$Column) = "Link WAN healtcheck"
+        $excel.cells.item($row,$Column) = "Link $ExcelSDWANText healthcheck"
         ChangeFontExcelCell $Sheet $row $Column
         $row++
         $row = CreateExcelTabel $Sheet $VirtualWanLinkHealthCheckArray        
@@ -1255,7 +1266,7 @@ Function CreateExcelSheetVirtualWanLink {
     if ($VirtualWanLinkServiceArray) {                
         $row++   
         $Column=1
-        $excel.cells.item($row,$Column) = "Link WAN service"
+        $excel.cells.item($row,$Column) = "Link $ExcelSDWANText service"
         ChangeFontExcelCell $Sheet $row $Column
         $row++
         $row = CreateExcelTabel $Sheet $VirtualWanLinkServiceArray        
@@ -1479,10 +1490,9 @@ Function GetNumber ($NumberString) {
     [int]$IntNum = [convert]::ToInt32($NumberString, 10)
     return $IntNum
 }
-Function Get-ScriptDirectory
-{
-  $Invocation = (Get-Variable MyInvocation -Scope 1).Value
-  Split-Path $Invocation.MyCommand.Path
+Function Get-ScriptDirectory {
+    $Invocation = (Get-Variable MyInvocation -Scope 1).Value
+    Split-Path $Invocation.MyCommand.Path
 }
 Function GetSubnetCIDR ([string]$Subnet,[IPAddress]$SubnetMask) {
     $binaryOctets = $SubnetMask.GetAddressBytes() | ForEach-Object { [Convert]::ToString($_, 2) }
@@ -1503,7 +1513,7 @@ Function GetSubnetCIDRPolicy ($SubnetCIDRPolicy) {
 Function MakeArray { $args }
 Function ParseConfigFile {
     Param([array]$requiredValues, [string]$PconfigFile) 
-   
+
     $config = @{}
     if (-not (Test-Path -PathType Leaf $PconfigFile)) {
         Write-Output "Fatal error: File $PconfigFile not found. Processing aborted."
@@ -1523,9 +1533,9 @@ Function ParseConfigFile {
     # Exit the program if a required value is missing in the configuration file.
     if ($missingRequiredValue) { exit 2 }
     $config
- }
- #This function Parses the ISDB and changes the ID for the name if found.
- Function ParseISDB ($ParseISDBlist) {
+}
+#This function Parses the ISDB and changes the ID for the name if found.
+Function ParseISDB ($ParseISDBlist) {
     Foreach  ($rule in $ParseISDBlist) {
         if ($Rule."internet-service-id" -ne "") {
             foreach ($FortiISDB in  $FortiISDBArray) {
@@ -1538,8 +1548,8 @@ Function ParseConfigFile {
         }
     }
     return $ParseISDBlist
- }
- Function  PlaceLinkToToC ($CurrentSheet) {
+}
+Function  PlaceLinkToToC ($CurrentSheet) {
     $CurrentSheet.Cells.Item(1,1) = "Table of Contents"
     $CurrentSheet.Hyperlinks.Add(
         $CurrentSheet.Cells.Item(1,1),
@@ -1550,25 +1560,25 @@ Function ParseConfigFile {
     ) | Out-Null
 }
 Function UpdateMainSheet ( $ActiveArray ) {
-    $MainSheet.Cells.Item(2,1) = 'Excel Creation Date'
-    $MainSheet.Cells.Item(2,2) = $Date
-    $MainSheet.Cells.Item(2,2).numberformat = "00"
-    $MainSheet.Cells.Item(3,1) = 'Config Creation Date'
-    $MainSheet.Cells.Item(3,2) = $ConfigDate 
-    $MainSheet.Cells.Item(3,2).numberformat = "00"                       
-    $MainSheet.Cells.Item(4,1) = 'Type'
-    $MainSheet.Cells.Item(4,2) = $FWType
-    $MainSheet.Cells.Item(5,1) = 'Version'
-    $MainSheet.Cells.Item(5,2) = $FWVersion  
+    $MainSheet.Cells.Item(3,1) = 'Excel Creation Date'
+    $MainSheet.Cells.Item(3,2) = $Date
+    $MainSheet.Cells.Item(3,2).numberformat = "00"
+    $MainSheet.Cells.Item(4,1) = 'Config Creation Date'
+    $MainSheet.Cells.Item(4,2) = $ConfigDate 
+    $MainSheet.Cells.Item(4,2).numberformat = "00"                       
+    $MainSheet.Cells.Item(5,1) = 'Type'
+    $MainSheet.Cells.Item(5,2) = $FWType
+    $MainSheet.Cells.Item(6,1) = 'Version'
+    $MainSheet.Cells.Item(6,2) = $FWVersion  
     #$NoteProperties = $ActiveArray | get-member -Type NoteProperty
     $NoteProperties = SkipEmptyNoteProperties $ActiveArray
-    $Row = 6
+    $Row = 7
     $Column = 1
     foreach ($Noteproperty in $NoteProperties) {
         $excel.cells.item($row,$Column) = $Noteproperty.Name
         $Row++
     }
-    $Row = 6
+    $Row = 7
     $Column = 2
     foreach ($ActiveMember in $ActiveArray) {
         foreach ($Noteproperty in $NoteProperties) {
@@ -1649,8 +1659,6 @@ FirewallIP;$FirewallIP
 FirewallPort;$FirewallPort
 FWUser;$FWUser
 FWPassword;$FWPassword
-
-  
 "@
             $ConfigString | Set-Content $FortigateConfig
         }
@@ -1692,8 +1700,8 @@ FWPassword;$FWPassword
             exit 1
         }
         $loadedConfig = Get-Content $FortigateConfig
-     }
-     default {
+    }
+    default {
         Write-Output "Extention needs to be .conf for a config file OR .cred for a credential file!"
         exit 1
     }
@@ -1739,7 +1747,8 @@ if ($SSHConfig) {
 }
 else {
     $configdateArray=$Filename.Split("_")
-    $configdate = $configdateArray[$configdateArray.Count-2] + $configdateArray[$configdateArray.Count-1]
+    #$configdate = $configdateArray[$configdateArray.Count-2] + $configdateArray[$configdateArray.Count-1]
+    $configdate = $configdateArray[$configdateArray.Count-1]
     $ExcelFullFilePad = "$workingFolder\$fileName"
 }
 
@@ -1810,6 +1819,7 @@ $VirtualWanLinkServiceArray = [System.Collections.ArrayList]@()
 $OSPFRouterID = "no-ospf"
 #Set all properties that contain password to be excluded from the excel file.
 $SkipExportProperties = MakeArray "passwd" "password" "psksecret" "secret" "ppk-secret" "auth-password-l1" "auth-password-l2" "auth-pwd"
+$SDWAN=$false
 foreach ($Line in $loadedConfig) {
     $Proc = $Counter/$MaxCounter*100
     $ProcString = $Proc.ToString("0.00")
@@ -1818,7 +1828,7 @@ foreach ($Line in $loadedConfig) {
     else { $estimatedTotalSeconds = $MaxCounter/ $counter * $elapsedTime.TotalSeconds }
     $estimatedTotalSecondsTS = New-TimeSpan -seconds $estimatedTotalSeconds
     $estimatedCompletionTime = $startTime + $estimatedTotalSecondsTS    
-    Write-Progress -Activity "Parsing config file ($ProcString%). Estimate completion time $estimatedCompletionTime" -PercentComplete ($Proc)
+    Write-Progress -Activity "Parsing config file ($ProcString%). ECT $estimatedCompletionTime" -PercentComplete ($Proc)
     $Counter++
     $Configline=$Line.Trim() -replace '\s+',' '
     $ConfigLineArray = $Configline.Split(" ")    
@@ -2035,7 +2045,10 @@ foreach ($Line in $loadedConfig) {
                 }
                 "service" {
                     $SUBSection = $True
-                    $SUBSectionConfig = "virtualwanlinkservice"                     
+                    $SUBSectionConfig = "virtualwanlinkservice"  
+                    #if () {
+                    #    $SUBSection2 = $True    
+                    #}                   
                 }
                 "split-dns" {
                     $SUBSection = $True
@@ -2048,7 +2061,7 @@ foreach ($Line in $loadedConfig) {
                 "secondaryip" {
                     $SUBSection = $true
                     $SUBSectionConfig = "secondaryip"                   
-                }            
+                }                           
                 "system" {
                     switch($ConfigLineArray[2]) {
                         "admin" {
@@ -2097,6 +2110,12 @@ foreach ($Line in $loadedConfig) {
                             $ConfigSection = "ConfigSystemLinkmonitor"
                             Write-Output "Config system link-monitor line found."
                         }
+                        "sdwan" {
+                            $ConfigSection = "ConfigSystemVirtualWanLink" 
+                            $rule = InitSystemVirtualWanLink
+                            $SDWAN=$true
+                            Write-Output "Config system SDWAN line found."                            
+                        }
                         "Settings" {
                             $ConfigSection = "ConfigSystemSettings" 
                             $rule = InitSystemSettings
@@ -2107,24 +2126,24 @@ foreach ($Line in $loadedConfig) {
                             Write-Output "Config system session-helper line found."
                         }
                         "snmp" {
-                           switch($ConfigLineArray[3]) {
-                               "sysinfo" {
-                                   $ConfigSection = "ConfigSystemSNMPSysinfo"
-                                   $rule = InitSystemSNMPSysInfo
-                                   $SNMPFound=$true
-                                   Write-Output "Config system snmp sysinfo line found."
-                               }
-                               "community" {
-                                   $ConfigSection = "ConfigSystemSNMPCommunity"
-                                   $SNMPFound=$true
-                                   Write-Output "Config system snmp community line found."
-                               }
-                               "user" {
-                                   $ConfigSection = "ConfigSystemSNMPUser"
-                                   $SNMPFound=$true
-                                   Write-Output "Config system snmp user line found."
-                               }
-                           }
+                            switch($ConfigLineArray[3]) {
+                                "sysinfo" {
+                                    $ConfigSection = "ConfigSystemSNMPSysinfo"
+                                    $rule = InitSystemSNMPSysInfo
+                                    $SNMPFound=$true
+                                    Write-Output "Config system snmp sysinfo line found."
+                                }
+                                "community" {
+                                    $ConfigSection = "ConfigSystemSNMPCommunity"
+                                    $SNMPFound=$true
+                                    Write-Output "Config system snmp community line found."
+                                }
+                                "user" {
+                                    $ConfigSection = "ConfigSystemSNMPUser"
+                                    $SNMPFound=$true
+                                    Write-Output "Config system snmp user line found."
+                                }
+                            }
                         }
                         "virtual-wan-link" {
                             $ConfigSection = "ConfigSystemVirtualWanLink"
@@ -2165,7 +2184,7 @@ foreach ($Line in $loadedConfig) {
                                 "phase1-interface" {
                                     $ConfigSection = "Configvpnipsecphase1"
                                     Write-Output "Config vpn ipsec phase1-interface line found."
-                                 }
+                                }
                                 "phase2-interface" {
                                     $ConfigSection = "Configvpnipsecphase2"
                                     Write-Output "Config vpn ipsec phase2-interface line found."
@@ -2186,7 +2205,6 @@ foreach ($Line in $loadedConfig) {
                                             Write-Output "Config vpn ssl web portal line found."
                                         }
                                     }
-
                                 }
                             }   # switch($ConfigLineArray[3])
                         }   # ssl
@@ -2194,6 +2212,16 @@ foreach ($Line in $loadedConfig) {
                 }
                 "widget" {
                     $SUBSection2 = $True
+                }
+                "zone" {
+                    #Zone is defined on multiple levels 
+                    if ($SDWAN) {
+                        $SUBSection = $True
+                        $SUBSectionConfig = "SDWANZone"
+                    }
+                    else {
+                        $SUBSection2 = $True
+                    }
                 }
             }   # switch($ConfigLineArray[1])
         }   # "config"
@@ -2304,11 +2332,11 @@ foreach ($Line in $loadedConfig) {
                             $IDNumber = GetNumber($Value)
                             $VirtualWanLinkMember | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
-                        "virtualwanlinkservice"{
+                        "virtualwanlinkservice" {
                             $VirtualWanLinkService = InitVirtualWanLinkService
                             $IDNumber = GetNumber($Value)
                             $VirtualWanLinkService | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force                            
-                        }
+                        }                     
                     }   # Switch ($SUBSectionConfig)
                 }   # if ($SUBSection)
                 else {
@@ -2578,6 +2606,7 @@ foreach ($Line in $loadedConfig) {
                                 else {
                                     #Only ONE member
                                     $Value = $ConfigLineArray[2]
+                                    if ($Value -eq 0) { $Value = "All" }
                                     $VirtualWanLinkHealthcheck | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                                 }
                             }
@@ -3003,6 +3032,9 @@ foreach ($Line in $loadedConfig) {
                         }
                         "ConfigSystemLinkmonitor" {
                             CreateExcelSheet "LinkMonitor$VdomName" $rulelist                         
+                        }
+                        "ConfigSystemSDWAN"  {
+                            CreateExcelSheetVirtualWanLink
                         }
                         "ConfigSystemSettings" {
                             $rulelist.Add($rule) | Out-Null 
