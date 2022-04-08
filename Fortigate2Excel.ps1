@@ -41,13 +41,27 @@ Param
     [switch]$SkipFortiISDB = $false,
     [switch]$SkipTimeZone = $false
 )
-
 Function InitAuthenticationRule {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value "" 
     $InitRule | Add-Member -type NoteProperty -name Groups -Value "" 
     $InitRule | Add-Member -type NoteProperty -name Portal -Value ""
     return $InitRule   
+}
+Function InitAcme {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Interface -Value "" 
+    return $InitRule    
+}
+Function InitAcmeAccounts {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name ID -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name status -Value ""
+    $InitRule | Add-Member -type NoteProperty -name url -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ca_url -Value ""
+    $InitRule | Add-Member -type NoteProperty -name email -Value ""
+    $InitRule | Add-Member -type NoteProperty -name privatekey -Value "" 
+    return $InitRule
 }
 Function InitBookmark {
     $InitRule = New-Object System.Object;
@@ -60,7 +74,6 @@ Function InitBookmark {
     $InitRule | Add-Member -type NoteProperty -name Security  -Value "" 
     return $InitRule
 }
-
 Function InitDHCPOptions {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value "" 
@@ -72,8 +85,11 @@ Function InitDHCPOptions {
 Function InitDHCPRange {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name "end-ip" -Value ""
+    $InitRule | Add-Member -type NoteProperty -name "end-prefix" -Value ""
+    $InitRule | Add-Member -type NoteProperty -name "prefix-length" -Value ""   
     $InitRule | Add-Member -type NoteProperty -name "start-ip" -Value ""
-    $InitRule | Add-Member -type NoteProperty -name "end-ip" -Value ""  
+    $InitRule | Add-Member -type NoteProperty -name "start-prefix" -Value ""    
     return $InitRule
 }
 Function InitDHCPReservedAddress {
@@ -99,7 +115,6 @@ Function InitFirewallAddress {
     $InitRule | Add-Member -type NoteProperty -name UUID -Value ""
     $InitRule | Add-Member -type NoteProperty -name visibility -Value ""
     $InitRule | Add-Member -type NoteProperty -name wildcard-fqdn -Value ""
-    
     return $InitRule
 }
 Function InitFirewallAddress6 {
@@ -120,7 +135,6 @@ Function InitFirewallAddress6 {
     $InitRule | Add-Member -type NoteProperty -name UUID -Value ""
     $InitRule | Add-Member -type NoteProperty -name Visibility -Value ""
     $InitRule | Add-Member -type NoteProperty -name Wildcard-fqdn -Value ""
-    
     return $InitRule
 }
 Function InitFirewallAddressGroup {
@@ -189,7 +203,6 @@ Function InitFirewallRule {
     $InitRule | Add-Member -type NoteProperty -name utm-status -Value ""
     $InitRule | Add-Member -type NoteProperty -name UUID -Value ""
     $InitRule | Add-Member -type NoteProperty -name webfilter-profile -Value ""
-    
     return $InitRule
 }
 Function InitFirewallServiceCategory {
@@ -427,7 +440,6 @@ Function InitSystemAccprofile {
     $InitRule | Add-Member -type NoteProperty -name utmgrp -Value "" 
     $InitRule | Add-Member -type NoteProperty -name endpoint-control-grp -Value "" 
     $InitRule | Add-Member -type NoteProperty -name wifi -Value "" 
-
     return $InitRule 
 }
 Function InitSystemAdmin {
@@ -471,20 +483,27 @@ Function InitSystemDHCP {
     $InitRule | Add-Member -type NoteProperty -name interface -Value ""
     $InitRule | Add-Member -type NoteProperty -name "dns-server1" -Value ""
     $InitRule | Add-Member -type NoteProperty -name "dns-server2" -Value ""
+    $InitRule | Add-Member -type NoteProperty -name "dns-server3" -Value ""
+    $InitRule | Add-Member -type NoteProperty -name "dns-server4" -Value ""
     $InitRule | Add-Member -type NoteProperty -name "ntp-server1" -Value ""
+    $InitRule | Add-Member -type NoteProperty -name "ntp-server2" -Value ""
+    $InitRule | Add-Member -type NoteProperty -name "ntp-server3" -Value ""
     $InitRule | Add-Member -type NoteProperty -Name "filename" -Value ""
     $InitRule | Add-Member -type NoteProperty -Name status -Value "Enable"
     return $InitRule
 }
 Function InitSystemDNSDatabase {
     $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name allow-transfer -Value ""
     $InitRule | Add-Member -type NoteProperty -name authoritative -Value ""
     $InitRule | Add-Member -type NoteProperty -name contact -Value ""
     $InitRule | Add-Member -type NoteProperty -name DNSName -Value ""
     $InitRule | Add-Member -type NoteProperty -name domain -Value ""
     $InitRule | Add-Member -type NoteProperty -name forwarder -Value ""
     $InitRule | Add-Member -type NoteProperty -name ip-master -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ip-primary -Value ""
     $InitRule | Add-Member -type NoteProperty -name primary-name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name rr-max -Value ""
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name source-ip -Value ""
     $InitRule | Add-Member -type NoteProperty -name status -Value ""
@@ -499,7 +518,7 @@ Function InitSystemDNSEntry {
     $InitRule | Add-Member -type NoteProperty -name canonical -Value ""
     $InitRule | Add-Member -type NoteProperty -name hostname -Value ""
     $InitRule | Add-Member -type NoteProperty -name ip -Value ""
-    #$InitRule | Add-Member -type NoteProperty -name ipv6 -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ipv6 -Value ""
     $InitRule | Add-Member -type NoteProperty -name preference -Value "10"
     $InitRule | Add-Member -type NoteProperty -name status -Value ""
     $InitRule | Add-Member -type NoteProperty -name ttl -Value "0"
@@ -512,22 +531,37 @@ Function InitSystemDNSServer {
     $InitRule | Add-Member -type NoteProperty -name name -Value ""
     $InitRule | Add-Member -type NoteProperty -name mode -Value ""
     $InitRule | Add-Member -type NoteProperty -name dnsfilter-profile -Value ""
+    $InitRule | Add-Member -type NoteProperty -name doh -Value ""
     return $InitRule 
 }
 Function InitSystemGlobal {
     $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name admin-sport -Value "443"
+    $InitRule | Add-Member -type NoteProperty -name admin-concurrent -Value ""
+    $InitRule | Add-Member -type NoteProperty -name admin-console-timeout -Value ""
+    $InitRule | Add-Member -type NoteProperty -name admin-https-ssl-versions -Value ""
     $InitRule | Add-Member -type NoteProperty -name admin-server-cert -Value "Selfsigned"
     $InitRule | Add-Member -type NoteProperty -name admin-telnet -Value "enable"
     $InitRule | Add-Member -type NoteProperty -name admintimeout -Value ""
+    $InitRule | Add-Member -type NoteProperty -name admin-sport -Value "443"
     $InitRule | Add-Member -type NoteProperty -name alias -Value "    "
     $initRule | Add-Member -type NoteProperty -name compliance-check -Value ""
     $InitRule | Add-Member -type NoteProperty -name disk-usage -Value ""
+    $InitRule | Add-Member -type NoteProperty -name fortigate-cloud-sandbbox -Value ""
+    $InitRule | Add-Member -type NoteProperty -name gui-allow-default-hostname -Value ""
+    $InitRule | Add-Member -type NoteProperty -name gui-certificates -Value ""
+    $InitRule | Add-Member -type NoteProperty -name gui-custom-languages -Value ""
     $InitRule | Add-Member -type NoteProperty -name gui-date-format -Value "yyyy/MM/dd"
     $initRule | Add-Member -type NoteProperty -name gui-device-latitude -Value ""
     $initRule | Add-Member -type NoteProperty -name gui-device-longitude -Value ""
+    $InitRule | Add-Member -type NoteProperty -name gui-displayhostname -Value ""
+    $InitRule | Add-Member -type NoteProperty -name gui-firmware-upgrade-warning -Value ""
+    $InitRule | Add-Member -type NoteProperty -name gui-ipv6 -Value ""
+    $InitRule | Add-Member -type NoteProperty -name gui-local-out -Value ""
     $initRule | Add-Member -type NoteProperty -name gui-theme -Value "green"
+    $InitRule | Add-Member -type NoteProperty -name gui-replacement-message-groups -Value ""
+    $InitRule | Add-Member -type NoteProperty -name gui-wireless-opensecurity -Value ""
     $InitRule | Add-Member -type NoteProperty -name hostname -Value ""
+    $InitRule | Add-Member -type NoteProperty -name language -Value ""
     $InitRule | Add-Member -type NoteProperty -name proxy-auth-timeout -Value ""
     $InitRule | Add-Member -type NoteProperty -name remoteauthtimeout -Value ""
     $InitRule | Add-Member -type NoteProperty -name revision-backup-on-logout -Value ""
@@ -555,7 +589,6 @@ Function InitSystemHA {
     $InitRule | Add-Member -type NoteProperty -name session-pickup -Value ""
     $InitRule | Add-Member -type NoteProperty -name session-sync-dev -Value ""
     $InitRule | Add-Member -type NoteProperty -name sync-config -Value "enable"
-    
     return $InitRule
 }
 Function InitSystemHAMGMTInterfaces {
@@ -592,7 +625,6 @@ Function InitSystemInterface {
     $InitRule | Add-Member -type NoteProperty -name User -Value ""
     $InitRule | Add-Member -type NoteProperty -name vdom -Value ""
     $InitRule | Add-Member -type NoteProperty -name vlanid -Value ""
-    
     return $InitRule
 }
 Function InitSystemLinkMonitor {
@@ -626,7 +658,6 @@ Function InitSystemSettings {
     #There is only ONE set of this settting. Therefore is is not needed to define the NoteProperties.
     return $InitRule
 }
-
 Function InitSystemSNMPSysInfo {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name status -Value "" 
@@ -635,7 +666,6 @@ Function InitSystemSNMPSysInfo {
     $InitRule | Add-Member -type NoteProperty -name location -Value ""
     return $InitRule
 }
-
 Function InitSystemSNMPCommunity {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
@@ -643,14 +673,12 @@ Function InitSystemSNMPCommunity {
     $InitRule | Add-Member -type NoteProperty -name hosts -Value ""
     return $InitRule
 }
-
 Function InitSystemSNMPCommunityHosts {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
     $InitRule | Add-Member -type NoteProperty -name IP -Value ""
     return $InitRule
 }
-
 Function InitSystemSNMPUser {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
@@ -659,11 +687,17 @@ Function InitSystemSNMPUser {
     $InitRule | Add-Member -type NoteProperty -name auth-pwd -Value ""
     return $InitRule
 }
-
 Function InitSystemVirtualWanLink {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name status -Value ""
     $InitRule | Add-Member -type NoteProperty -name load-balance-mode -Value ""
+    $InitRule | Add-Member -type NoteProperty -name speedtest-bypass-routing -Value ""
+    $InitRule | Add-Member -type NoteProperty -name duplication-max-num -Value ""
+    $InitRule | Add-Member -type NoteProperty -name neighbor-hold-down -Value ""
+    $InitRule | Add-Member -type NoteProperty -name neighbor-hold-down-time -Value ""
+    $InitRule | Add-Member -type NoteProperty -name neighbor-hold-boot-time -Value ""
+    $InitRule | Add-Member -type NoteProperty -name fail-detect -Value ""
+    $InitRule | Add-Member -type NoteProperty -name fail-alert-interfaces -Value ""
     return $InitRule
 }
 Function InitSystemZone {
@@ -726,9 +760,22 @@ Function InitVirtualWanLinkHealthCheck {
 }
 Function InitVirtualWanLinkMember {
     $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name ID -Value ""    
+    $InitRule | Add-Member -type NoteProperty -name ID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name cost -Value ""    
     $InitRule | Add-Member -type NoteProperty -name interface -Value ""
     $InitRule | Add-Member -type NoteProperty -name weight -Value "1"
+    $InitRule | Add-Member -type NoteProperty -name zone -Value ""
+    $InitRule | Add-Member -type NoteProperty -name gateway -Value ""
+    $InitRule | Add-Member -type NoteProperty -name source -Value ""
+    $InitRule | Add-Member -type NoteProperty -name gateway6 -Value ""
+    $InitRule | Add-Member -type NoteProperty -name source6 -Value ""
+    $InitRule | Add-Member -type NoteProperty -name priority -Value ""
+    $InitRule | Add-Member -type NoteProperty -name priority6 -Value ""
+    $InitRule | Add-Member -type NoteProperty -name spillover-threshold -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ingress-spillover-threshold -Value ""
+    $InitRule | Add-Member -type NoteProperty -name volume-ratio -Value ""
+    $InitRule | Add-Member -type NoteProperty -name status -Value ""
+    $InitRule | Add-Member -type NoteProperty -name comment -Value ""  
     return $InitRule   
 }
 Function InitVirtualWanLinkService {
@@ -740,6 +787,52 @@ Function InitVirtualWanLinkService {
     $InitRule | Add-Member -type NoteProperty -name src -Value ""
     $InitRule | Add-Member -type NoteProperty -name priority-members -Value ""
     $InitRule | Add-Member -type NoteProperty -name use-shortcut-sla -Value ""
+    $InitRule | Add-Member -type NoteProperty -name addr-mode -Value ""
+    $InitRule | Add-Member -type NoteProperty -name input-device -Value ""
+    $InitRule | Add-Member -type NoteProperty -name input-device-negate -Value ""
+    $InitRule | Add-Member -type NoteProperty -name mode -Value ""
+    $InitRule | Add-Member -type NoteProperty -name minimum-sla-meet-members -Value ""
+    $InitRule | Add-Member -type NoteProperty -name hash-mode -Value ""
+    $InitRule | Add-Member -type NoteProperty -name role -Value ""
+    $InitRule | Add-Member -type NoteProperty -name standalone-action -Value ""
+    $InitRule | Add-Member -type NoteProperty -name quality-link -Value ""
+    $InitRule | Add-Member -type NoteProperty -name tos -Value ""
+    $InitRule | Add-Member -type NoteProperty -name tos-mask -Value ""
+    $InitRule | Add-Member -type NoteProperty -name protocol -Value ""
+    $InitRule | Add-Member -type NoteProperty -name start-port -Value ""
+    $InitRule | Add-Member -type NoteProperty -name end-port -Value ""
+    $InitRule | Add-Member -type NoteProperty -name route-tag -Value ""
+    $InitRule | Add-Member -type NoteProperty -name dst-negate -Value ""
+    $InitRule | Add-Member -type NoteProperty -name dst6 -Value ""
+    $InitRule | Add-Member -type NoteProperty -name src6 -Value ""
+    $InitRule | Add-Member -type NoteProperty -name src-negate -Value ""
+    $InitRule | Add-Member -type NoteProperty -name users -Value ""
+    $InitRule | Add-Member -type NoteProperty -name groups -Value ""
+    $InitRule | Add-Member -type NoteProperty -name internet-service -Value ""
+    $InitRule | Add-Member -type NoteProperty -name internet-service-custom -Value ""
+    $InitRule | Add-Member -type NoteProperty -name internet-service-custom-group -Value ""
+    $InitRule | Add-Member -type NoteProperty -name internet-service-name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name internet-service-group -Value ""
+    $InitRule | Add-Member -type NoteProperty -name internet-service-app-ctrl -Value ""
+    $InitRule | Add-Member -type NoteProperty -name internet-service-app-ctrl-group -Value ""
+    $InitRule | Add-Member -type NoteProperty -name health-check -Value ""
+    $InitRule | Add-Member -type NoteProperty -name link-cost-factor -Value ""
+    $InitRule | Add-Member -type NoteProperty -name packet-loss-weight -Value ""
+    $InitRule | Add-Member -type NoteProperty -name latency-weight -Value ""
+    $InitRule | Add-Member -type NoteProperty -name jitter-weight -Value ""
+    $InitRule | Add-Member -type NoteProperty -name bandwidth-weight -Value ""
+    $InitRule | Add-Member -type NoteProperty -name link-cost-threshold -Value ""
+    $InitRule | Add-Member -type NoteProperty -name hold-down-time -Value ""
+    $InitRule | Add-Member -type NoteProperty -name dscp-forward -Value ""
+    $InitRule | Add-Member -type NoteProperty -name dscp-reverse -Value ""
+    $InitRule | Add-Member -type NoteProperty -name dscp-forward-tag -Value ""
+    $InitRule | Add-Member -type NoteProperty -name dscp-reverse-tag -Value ""
+    $InitRule | Add-Member -type NoteProperty -name priority-zone -Value ""
+    $InitRule | Add-Member -type NoteProperty -name status -Value ""
+    $InitRule | Add-Member -type NoteProperty -name gateway -Value ""
+    $InitRule | Add-Member -type NoteProperty -name default -Value ""
+    $InitRule | Add-Member -type NoteProperty -name sla-compare-method -Value ""
+    $InitRule | Add-Member -type NoteProperty -name tie-break -Value ""
     return $InitRule  
 }
 Function InitVpnIpsecPhase1 {
@@ -895,11 +988,13 @@ Function ConvertHaInterfaces ($HAline) {
     $TempLine = "("
     $HAArray = $HAline.Split(",")
     for ($Counter=0;$Counter -le $HAArray.Count-1;$Counter++) {
-     $TempLine = $Templine + $HAArray[$Counter]
-     if ($Counter % 2 -eq 0) {
-      $TempLine = $TempLine + ","
-     }
-     else { $TempLine = $TempLine + "),(" }
+        $TempLine = $Templine + $HAArray[$Counter]
+        if ($Counter % 2 -eq 0) {
+            $TempLine = $TempLine + ","
+        }
+        else {
+            $TempLine = $TempLine + "),("
+        }
     }
     $TempLine = $TempLine.Substring(0,$TempLine.Length-3)
     $TempLine = $TempLine + ")"
@@ -924,7 +1019,6 @@ Function ConvertTagArrayToLine ($ConvertTagArray) {
         #Drop the last letter (,)
         $TempLine = $TempLine.Substring(0,$TempLine.Length-1)
     }
-
     Return $TempLine
 }
 #CopyArrayMember ($ActiveArray)
@@ -932,7 +1026,6 @@ Function ConvertTagArrayToLine ($ConvertTagArray) {
 Function CopyArrayMember ($ActiveArray) {
     $NewMember = New-Object System.Object;
     $NoteProperties = $ActiveArray | get-member -Type NoteProperty
-
     foreach ($ActiveMember in $ActiveArray) {
         foreach ($Noteproperty in $NoteProperties) {
             $PropertyString = [string]$NoteProperty.Name
@@ -959,7 +1052,6 @@ Function SkipEmptyNoteProperties ($SkipEmptyNotePropertiesArray) {
         }
         If ($NotePropertyFound) { $ReturnNoteProperties.Add($SkipNotePropertieOrg) | Out-Null  }
     }
-
     return $ReturnNoteProperties
 }
 Function Convert-NumberToA1 { 
@@ -1049,6 +1141,7 @@ Function CreateExcelSheetDHCP {
     else { $SheetName = "DHCP_IPV6_" }
     $SheetName = $SheetName + $rule.Interface + "_" + $rule.ID
     $SheetName = $SheetName.Replace("-","_")
+    $SheetName = $SheetName.Replace(" ","_")
     if ($SheetName.Length -gt 31) {
         Write-output "Sheetname cannot be longer that 32 caracters shorting name to fit."
         $SheetName = $SheetName.Substring(0,31)
@@ -1273,6 +1366,21 @@ Function CreateExcelSheetVirtualWanLink {
     }      
     $UsedRange = $Sheet.usedRange                  
     $UsedRange.EntireColumn.AutoFit() | Out-Null                  
+}
+Function CreateExcelSheetAcme {
+    $row = 2
+    $Sheet = $workbook.Worksheets.Add()
+    PlaceLinkToToC $Sheet
+    $SheetName = "Acme$VdomName"
+    $SheetName = $SheetName.Replace("-","_")
+    $Sheet.Name = $SheetName
+    $Column = 1   
+    $excel.cells.item($row,$Column) = $SheetName 
+    ChangeFontExcelCell $Sheet $row $Column  
+    $row=$row+2 
+    $row = CreateExcelTabel $Sheet $AcmeAccountArray  
+    $UsedRange = $Sheet.usedRange                  
+    $UsedRange.EntireColumn.AutoFit() | Out-Null    
 }
 Function CreateExcelSheetBGP {
     #If BGP is not used AS = none then this sheet does not need to be created
@@ -1595,7 +1703,6 @@ Function UpdateMainSheet ( $ActiveArray ) {
         }                        
     }                         
 }
-
 Function UpdateToC ($CurrentSheetName) {
     $TocSheet.Cells.Item($TocRow,1) = $CurrentSheetName
     $TocSheet.Hyperlinks.Add(
@@ -1792,8 +1899,10 @@ $FWVersion = $FirewallInfoArray[2]
 $FWType = $FirewallTypeArray[1]
 $SUBSection = $False
 $SNMPFound = $False
+$SDWAN=$false
 #Creating empty Arrays
 $ruleList = [System.Collections.ArrayList]@()
+$AcmeAccountArray = [System.Collections.ArrayList]@()
 $AuthenticationRuleArray = [System.Collections.ArrayList]@()
 $BookMarkArray = [System.Collections.ArrayList]@()
 $DHCPRangeArray = [System.Collections.ArrayList]@()
@@ -1818,8 +1927,7 @@ $VirtualWanLinkServiceArray = [System.Collections.ArrayList]@()
 #Make sure $OSPFRouterID has a known value
 $OSPFRouterID = "no-ospf"
 #Set all properties that contain password to be excluded from the excel file.
-$SkipExportProperties = MakeArray "passwd" "password" "psksecret" "secret" "ppk-secret" "auth-password-l1" "auth-password-l2" "auth-pwd"
-$SDWAN=$false
+$SkipExportProperties = MakeArray "passwd" "password" "psksecret" "secret" "ppk-secret" "auth-password-l1" "auth-password-l2" "auth-pwd" "privatekey"
 foreach ($Line in $loadedConfig) {
     $Proc = $Counter/$MaxCounter*100
     $ProcString = $Proc.ToString("0.00")
@@ -1828,13 +1936,17 @@ foreach ($Line in $loadedConfig) {
     else { $estimatedTotalSeconds = $MaxCounter/ $counter * $elapsedTime.TotalSeconds }
     $estimatedTotalSecondsTS = New-TimeSpan -seconds $estimatedTotalSeconds
     $estimatedCompletionTime = $startTime + $estimatedTotalSecondsTS    
-    Write-Progress -Activity "Parsing config file ($ProcString%). ECT $estimatedCompletionTime" -PercentComplete ($Proc)
+    Write-Progress -Activity "Parsing config file ($ProcString%). ETC $estimatedCompletionTime" -PercentComplete ($Proc)
     $Counter++
     $Configline=$Line.Trim() -replace '\s+',' '
     $ConfigLineArray = $Configline.Split(" ")    
     switch($ConfigLineArray[0]) {
         "config" {
             switch($ConfigLineArray[1]) {
+                "accounts" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "acmeacc" 
+                }
                 "area" {
                     $SUBSection = $True
                     $SUBSectionConfig = "ospfarea"                      
@@ -1981,6 +2093,10 @@ foreach ($Line in $loadedConfig) {
                     $SUBSection = $True
                     $SUBSectionConfig = "ospf6interface"                    
                 }
+                "prefix-range" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "dhcpiprange"
+                }                
                 "realservers" {
                     $SUBSection = $True
                     $SUBSectionConfig = "VIPrealservers"
@@ -2064,6 +2180,10 @@ foreach ($Line in $loadedConfig) {
                 }                           
                 "system" {
                     switch($ConfigLineArray[2]) {
+                        "Acme" {
+                            $ConfigSection = "ConfigSystemAcme"
+                            Write-Output "Config system acme line found."
+                        }
                         "admin" {
                             $ConfigSection = "ConfigSystemAdmin"
                             Write-Output "Config system admin line found."                            
@@ -2230,6 +2350,10 @@ foreach ($Line in $loadedConfig) {
                 $Value = CleanupLine $ConfigLine
                 if ($SUBSection) {
                     Switch ($SUBSectionConfig) {
+                        "acmeacc" {
+                            $AcmeAccount = InitAcmeAccounts
+                            $AcmeAccount | Add-Member -MemberType NoteProperty -Name ID -Value $value -force
+                        }
                         "authenticationrule" {
                             $AuthenticationRule = InitAuthenticationRule
                             $AuthenticationRule | Add-Member -MemberType NoteProperty -Name ID -Value $value -force
@@ -2242,7 +2366,6 @@ foreach ($Line in $loadedConfig) {
                                 $BookMark | Add-member -MemberType NoteProperty -Name PortalName -Value $rule.PortalName -force
                             }
                             else { $BookMarkGroup = $Value }
-
                         }
                         "dhcpiprange" {
                             $DHCPRange = InitDHCPRange
@@ -2344,7 +2467,11 @@ foreach ($Line in $loadedConfig) {
                         "ConfigSystemAccprofile" {
                             $rule = InitSystemAccprofile
                             $rule | Add-Member -MemberType NoteProperty -Name Name -Value $Value -force
-                        }      
+                        }  
+                        "ConfigSystemAcme" {
+                            $rule = InitAcme
+                            $rule | Add-Member -MemberType NoteProperty -Name Interface -Vakye $Value -force
+                        }    
                         "ConfigSystemAdmin" {
                             $rule = InitSystemAdmin
                             $TrustedHosts = ""
@@ -2519,6 +2646,9 @@ foreach ($Line in $loadedConfig) {
                 $Value = CleanupLine $ConfigLine
                 if ($SUBSection) {
                     Switch ($SUBSectionConfig) {
+                        "acmeacc" {
+                            $AcmeAccount | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                        }
                         "authenticationrule" {
                             $AuthenticationRule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
@@ -2702,8 +2832,8 @@ foreach ($Line in $loadedConfig) {
                                 $rule | Add-Member -MemberType NoteProperty -Name dstaddr -Value $Value -force
                             }
                             else {
-                                 $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
-                                 }                        
+                                $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                            }                        
                         }
                         "ConfigRouterStatic6" {
                             if ($ConfigLineArray[1] -eq "dst" ) {
@@ -2715,14 +2845,14 @@ foreach ($Line in $loadedConfig) {
                                 $rule | Add-Member -MemberType NoteProperty -Name dstaddr -Value $Value -force
                             }
                             else {
-                                 $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                                $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                             }                        
                         }       
                         "ConfigRouterISIS" {
-                           if (($ConfigLineArray[1] -eq 'spf-interval-exp-l1') -or ($ConfigLineArray[1] -eq 'spf-interval-exp-l2')) {
-                               $Value = $ConfigLineArray[2] + " - " + $ConfigLineArray[3]
-                           }
-                           $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                            if (($ConfigLineArray[1] -eq 'spf-interval-exp-l1') -or ($ConfigLineArray[1] -eq 'spf-interval-exp-l2')) {
+                                $Value = $ConfigLineArray[2] + " - " + $ConfigLineArray[3]
+                            }
+                            $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }                 
                         "ConfigRouterOSPF" {
                             if ($ConfigLineArray[1] -eq 'router-id') { $OSPFRouterID = $ConfigLineArray[2] }
@@ -2750,6 +2880,9 @@ foreach ($Line in $loadedConfig) {
             if ($ConfigSection) {   
                 if ($SUBSection) {
                     Switch ($SUBSectionConfig) {
+                        "acmeacc" {
+                            $AcmeAccountArray.Add($AcmeAccount) | Out-Null
+                        }
                         "AuthenticationRule" {
                             $AuthenticationRuleArray.Add($AuthenticationRule) | Out-Null
                         }
@@ -2984,8 +3117,6 @@ foreach ($Line in $loadedConfig) {
                                     $RouterNetworkArray = [System.Collections.ArrayList]@()
                                     $RouterInterfaceArray = [System.Collections.ArrayList]@()
                                     $OSPFPassiveInterface = [System.Collections.ArrayList]@()
-#                                    $RouterRedistibuteArray = [System.Collections.ArrayList]@()
-#                                    $RouterDistibuteListArray = [System.Collections.ArrayList]@()   
                                     $OSPFInterface = [System.Collections.ArrayList]@()              
                                 }
                                 "ConfigRouterOSPF6" {
@@ -3001,6 +3132,9 @@ foreach ($Line in $loadedConfig) {
                         }
                         "ConfigSystemAccprofile" {
                             CreateExcelSheet "AccProfile$VdomName" $rulelist 
+                        }
+                        "ConfigSystemAcme" {
+                            CreateExcelSheetAcme 
                         }
                         "ConfigSystemAdmin"  {
                             CreateExcelSheet "AdminUsers$VdomName" $rulelist 
