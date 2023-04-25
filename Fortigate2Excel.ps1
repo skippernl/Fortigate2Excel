@@ -671,6 +671,7 @@ Function InitSystemSNMPCommunity {
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
     $InitRule | Add-Member -type NoteProperty -name name -Value ""
     $InitRule | Add-Member -type NoteProperty -name hosts -Value ""
+    $InitRule | Add-Member -type NoteProperty -name hosts-type -Value ""
     return $InitRule
 }
 Function InitSystemSNMPCommunityHosts {
@@ -717,6 +718,9 @@ Function InitUserGroup {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
     $InitRule | Add-Member -type NoteProperty -name member -Value ""
+    $InitRule | Add-Member -type NoteProperty -name match -Value ""
+    $InitRule | Add-Member -type NoteProperty -name server-name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name group-name -Value ""
     return $InitRule      
 }
 Function InitUserLdap {
@@ -749,6 +753,20 @@ Function InitUserRadius {
     $InitRule | Add-Member -type NoteProperty -name secret -Value ""
     $InitRule | Add-Member -type NoteProperty -name server -Value ""
     $InitRule | Add-Member -type NoteProperty -name timeout -Value "5" 
+    return $InitRule      
+}
+Function InitUserSAML {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name entity-id -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name single-sign-on-url -Value ""
+    $InitRule | Add-Member -type NoteProperty -name single-logout-url -Value ""
+    $InitRule | Add-Member -type NoteProperty -name idp-entity-id -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name idp-single-sign-on-url -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name idp-single-logout-url -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name idp-cert -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name group-name -Value "" 
+    $InitRule | Add-Member -type NoteProperty -name digest-method -Value "" 
     return $InitRule      
 }
 Function InitVirtualWanLinkHealthCheck {
@@ -2062,6 +2080,10 @@ foreach ($Line in $loadedConfig) {
                     $SUBSection = $True
                     $SUBSectionConfig = "dhcpiprange"
                 }
+                "match" {
+                    $SUBSection = $True
+                    $SUBSectionConfig = "groupmatch"                     
+                }
                 "members" {
                     $SUBSection = $True
                     $SUBSectionConfig = "virtualwanlinkmember"                     
@@ -2294,6 +2316,10 @@ foreach ($Line in $loadedConfig) {
                             $ConfigSection = "ConfigUserRadius"
                             Write-Output "Config user radius line found."                           
                         }
+                        "saml" {
+                            $ConfigSection = "ConfigUserSAML"
+                            Write-Output "Config user saml line found."                           
+                        }                        
                     }   # switch ($ConfigLineArray[2])
                 }        
                 "vdom" { $ConfigSection = "ConfigVDOM" }
@@ -2397,6 +2423,10 @@ foreach ($Line in $loadedConfig) {
                             $HAMGMTInterface = InitSystemHAMGMTInterfaces
                             $IDNumber = GetNumber($Value)
                             $HAMGMTInterface | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
+                        }
+                        "groupmatch" {
+                            $IDNumber = GetNumber($Value)
+                            $rule | Add-Member -MemberType NoteProperty -Name "Match" -Value $IDNumber -force
                         }
                         "ospfarea"  {
                             $OSPFRouterArea = $Value
@@ -2608,7 +2638,11 @@ foreach ($Line in $loadedConfig) {
                         "ConfigUserRadius" {
                             $rule = InitUserRadius
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -Force                            
-                        }                        
+                        }      
+                        "ConfigUserSAML" {
+                            $rule = InitUserSAML
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -Force  
+                        }                  
                         "ConfigFirewallServiceCategory" {
                             $rule = InitFirewallServiceCategory
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force                      
@@ -2675,6 +2709,9 @@ foreach ($Line in $loadedConfig) {
                         }
                         "HA-MGMTInterfaces" {
                             $HAMGMTInterface | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                        }
+                        "groupmatch" {
+                            $rule | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
                         "RouterDistributeList" {
                             $RouterDistibuteList | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
@@ -2989,6 +3026,12 @@ foreach ($Line in $loadedConfig) {
                         "ConfigSystemSNMPUser" {
                             $SNMPUsers.Add($rule)  | Out-Null 
                         }
+                        "ConfigUserGroup" {
+                            if ($SUBSectionConfig -eq "groupmatch") {
+                                $SUBSectionConfig = ""
+                            }
+                            else { $ruleList.Add($rule) | Out-Null }
+                        }
                         Default { $ruleList.Add($rule) | Out-Null  }
                     }   # switch ($ConfigSection)  
                 }   # else if ($SUBSection)
@@ -3210,6 +3253,10 @@ foreach ($Line in $loadedConfig) {
                         "ConfigUserRadius" {
                             $rulelist = $rulelist | Sort-Object Name
                             CreateExcelSheet "UserRadius$VdomName" $rulelist                         
+                        }
+                        "ConfigUserSAML" {
+                            $rulelist = $rulelist | Sort-Object Name
+                            CreateExcelSheet "UserSaml$VdomName" $rulelist                              
                         }
                         "Configvpnipsecphase1" { 
                             $rulelist = $rulelist | Sort-Object Name
