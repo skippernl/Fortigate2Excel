@@ -991,6 +991,23 @@ Function CleanupLine ($LineToCleanUp) {
     }
     return $ReturnValue
 }
+
+Function CleanSheetName ($CSName) {
+    $CSName = $CSName.Replace("-","_")
+    $CSName = $CSName.Replace(" ","_")
+    $CSName = $CSName.Replace("\","_")
+    $CSName = $CSName.Replace("/","_")
+    $CSName = $CSName.Replace("[]","_")
+    $CSName = $CSName.Replace("]","_")
+    $CSName = $CSName.Replace("*","_")
+    $CSName = $CSName.Replace("?","_")
+    if ($CSName.Length -gt 32) {
+        Write-output "Sheetname ($CSName) cannot be longer that 32 caracters shorting name to fit."
+        $CSName = $CSName.Substring(0,31)
+    }    
+
+    return $CSName
+}
 Function ChangeFontExcelCell ($ChangeFontExcelCellSheet, $ChangeFontExcelCellRow, $ChangeFontExcelCellColumn) {
     $ChangeFontExcelCellSheet.Cells.Item($ChangeFontExcelCellRow, $ChangeFontExcelCellColumn).HorizontalAlignment = -4108
     $ChangeFontExcelCellSheet.Cells.Item($ChangeFontExcelCellRow, $ChangeFontExcelCellColumn).Font.Size = 18
@@ -1135,7 +1152,7 @@ Function CreateExcelSheet ($SheetName, $SheetArray) {
         $row = 2
         $Sheet = $workbook.Worksheets.Add()
         PlaceLinkToToC $Sheet
-        $SheetName = $SheetName.Replace("-","_")
+        $SheetName = CleanSheetName $SheetName
         $Sheet.Name = $SheetName
         $Column = 1
         $excel.cells.item($row,$Column) = $SheetName 
@@ -1158,12 +1175,7 @@ Function CreateExcelSheetDHCP {
     if ($DHCPIP4) { $SheetName = "DHCP_IPV4_" }
     else { $SheetName = "DHCP_IPV6_" }
     $SheetName = $SheetName + $rule.Interface + "_" + $rule.ID
-    $SheetName = $SheetName.Replace("-","_")
-    $SheetName = $SheetName.Replace(" ","_")
-    if ($SheetName.Length -gt 31) {
-        Write-output "Sheetname cannot be longer that 32 caracters shorting name to fit."
-        $SheetName = $SheetName.Substring(0,31)
-    }
+    $SheetName = CleanSheetName $SheetName
     $Sheet.Name = $SheetName
     $Column = 1   
     $excel.cells.item($row,$Column) = $SheetName 
@@ -1222,6 +1234,7 @@ Function CreateExcelSheetDNSDatabase {
         $Sheet = $workbook.Worksheets.Add()
         PlaceLinkToToC $Sheet
         $SheetName = "DNSDatabase$VdomName"
+        $SheetName = CleanSheetName $SheetName
         $Sheet.Name = $SheetName
         $SheetName = $SheetName.Replace("-","_")
         $Column = 1   
@@ -1251,7 +1264,7 @@ Function CreateExcelSheetHA {
         $Sheet = $workbook.Worksheets.Add()
         PlaceLinkToToC $Sheet
         $SheetName = "HA$VdomName"
-        $SheetName = $SheetName.Replace("-","_")
+        $SheetName = CleanSheetName $SheetName
         $Sheet.Name = $SheetName
         $Column = 1   
         $excel.cells.item($row,$Column) = $SheetName 
@@ -1274,6 +1287,7 @@ Function CreateExcelSheetVPNSSLSettings {
     $Sheet = $workbook.Worksheets.Add()
     PlaceLinkToToC $Sheet
     $SheetName = "VPN_SSLSettings$VdomName"  
+    $SheetName = CleanSheetName $SheetName
     $Sheet.Name = $SheetName
     $Column=1
     $excel.cells.item($row,$Column) = $SheetName 
@@ -1298,6 +1312,7 @@ Function CreateExcelSheetSSLwebportal {
     $Sheet = $workbook.Worksheets.Add()
     PlaceLinkToToC $Sheet
     $SheetName = "VPN_SSLWebportal$VdomName"  
+    $SheetName = CleanSheetName $SheetName
     $Sheet.Name = $SheetName
     $Column=1
     $excel.cells.item($row,$Column) = $SheetName 
@@ -1349,6 +1364,7 @@ Function CreateExcelSheetVirtualWanLink {
         $SheetName = "Virtual_Wan_Link$VdomName"
         $ExcelSDWANText = "Virtual Wan"
     }
+    $SheetName = CleanSheetName $SheetName
     $Sheet.Name = $SheetName
     $Column = 1   
     $excel.cells.item($row,$Column) = $SheetName 
@@ -1390,7 +1406,7 @@ Function CreateExcelSheetAcme {
     $Sheet = $workbook.Worksheets.Add()
     PlaceLinkToToC $Sheet
     $SheetName = "Acme$VdomName"
-    $SheetName = $SheetName.Replace("-","_")
+    $SheetName = CleanSheetName $SheetName
     $Sheet.Name = $SheetName
     $Column = 1   
     $excel.cells.item($row,$Column) = $SheetName 
@@ -1407,7 +1423,7 @@ Function CreateExcelSheetBGP {
         $Sheet = $workbook.Worksheets.Add()
         PlaceLinkToToC $Sheet
         $SheetName = "Router_$RouterSection$VdomName"
-        $SheetName = $SheetName.Replace("-","_")
+        $SheetName = CleanSheetName $SheetName
         $Sheet.Name = $SheetName
         $Column = 1   
         $excel.cells.item($row,$Column) = $SheetName 
@@ -1452,7 +1468,7 @@ Function CreateExcelSheetISIS {
         $Sheet = $workbook.Worksheets.Add()
         PlaceLinkToToC $Sheet
         $SheetName = "Router_$RouterSection$VdomName"
-        $SheetName = $SheetName.Replace("-","_")
+        $SheetName = CleanSheetName $SheetName
         $Sheet.Name = $SheetName
         $Column = 1   
         $excel.cells.item($row,$Column) = $SheetName 
@@ -1489,7 +1505,7 @@ Function CreateExcelSheetOSPF {
         $Sheet = $workbook.Worksheets.Add()
         PlaceLinkToToC $Sheet
         $SheetName = "Router_$RouterSection$VdomName"
-        $SheetName = $SheetName.Replace("-","_")
+        $SheetName = CleanSheetName $SheetName
         $Sheet.Name = $SheetName
         $Column=1
         $excel.cells.item($row,$Column) = $SheetName 
@@ -1577,7 +1593,7 @@ Function CreateExcelSheetSNMP {
     $Sheet = $workbook.Worksheets.Add()
     PlaceLinkToToC $Sheet
     $SheetName = "SNMP$VdomName"
-    $SheetName = $SheetName.Replace("-","_")
+    $SheetName = CleanSheetName $SheetName
     $Sheet.Name = $SheetName
     $Column=1
     $excel.cells.item($row,$Column) = $SheetName
@@ -1891,14 +1907,13 @@ $TocSheet.Cells.Item(1,1)= 'Table of Contents'
 $MergeCells = $TocSheet.Range("A1:C1")
 $MergeCells.MergeCells = $true
 ChangeFontExcelCell $TocSheet 1 1
-if ($Filename.Length -gt 31) {
-    Write-output "Sheetname cannot be longer that 32 caracters shorting name to fit."
+if ($Filename.Length -gt 32) {
+    Write-output "Sheetname ($Filename) cannot be longer that 32 caracters shorting name to fit."
     $SheetName = $FileName.Substring(0,31)
 }
 else {
     $Sheetname = $FileName
 }
-#Table of Contents does not like the - Char in the sheet name
 $SheetName = $SheetName.Replace("-","_")
 $MainSheet.Name = $SheetName
 PlaceLinkToToC $MainSheet
