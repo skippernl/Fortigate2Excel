@@ -670,14 +670,16 @@ Function InitSystemSNMPCommunity {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
     $InitRule | Add-Member -type NoteProperty -name name -Value ""
-    $InitRule | Add-Member -type NoteProperty -name hosts -Value ""
-    $InitRule | Add-Member -type NoteProperty -name hosts-type -Value ""
+    $InitRule | Add-Member -type NoteProperty -name events -Value "None"    
     return $InitRule
 }
-Function InitSystemSNMPCommunityHosts {
+Function InitSystemSNMPCommunityHost {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
-    $InitRule | Add-Member -type NoteProperty -name IP -Value ""
+    $InitRule | Add-Member -type NoteProperty -name ha-direct -Value ""
+    $InitRule | Add-Member -type NoteProperty -name host-type -Value "Any" 
+    $InitRule | Add-Member -type NoteProperty -name ip -Value ""
+    $InitRule | Add-Member -type NoteProperty -name source-ip -Value ""
     return $InitRule
 }
 Function InitSystemSNMPUser {
@@ -1002,7 +1004,7 @@ Function CleanSheetName ($CSName) {
     $CSName = $CSName.Replace("*","_")
     $CSName = $CSName.Replace("?","_")
     if ($CSName.Length -gt 32) {
-        Write-output "Sheetname ($CSName) cannot be longer that 32 caracters shorting name to fit."
+        Write-output "Sheetname ($CSName) cannot be longer that 32 character shorting name to fit."
         $CSName = $CSName.Substring(0,31)
     }    
 
@@ -1047,11 +1049,11 @@ Function ConvertTagArrayToLine ($ConvertTagArray) {
                 $PropertyString = [string]$NoteProperty.Name
                 $TempLine = $TempLine + $ConvertTag.$PropertyString + ","
             }
-            #Drop the last letter (,)
+            #Drop the last char (,)
             $TempLine = $TempLine.Substring(0,$TempLine.Length-1)
             $TempLine = $TempLine + "),"
         }
-        #Drop the last letter (,)
+        #Drop the last char (,)
         $TempLine = $TempLine.Substring(0,$TempLine.Length-1)
     }
     Return $TempLine
@@ -1115,8 +1117,9 @@ Function Convert-NumberToA1 {
 #This Function Creates the Excel tabel 
 #$ActiveSheet is the used Excelsheet
 #$ActiveArray is the array that needs to be exported
-Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
+Function CreateExcelTabel ($ActiveSheet, $ActiveArray, $StartColomn=1) {
     $NoteProperties = SkipEmptyNoteProperties $ActiveArray
+    $Column=$StartColomn
     foreach ($Noteproperty in $NoteProperties) {
         $PropertyString = [string]$NoteProperty.Name
         #Keep passwords/psksecrets out of the documentation
@@ -1128,7 +1131,8 @@ Function CreateExcelTabel ($ActiveSheet, $ActiveArray) {
     $StartRow = $Row
     $Row++
     foreach ($ActiveMember in $ActiveArray) {
-        $Column=1
+        #$Column=1
+        $Column=$StartColomn
         foreach ($Noteproperty in $NoteProperties) {
             $PropertyString = [string]$NoteProperty.Name
             if (!$SkipExportProperties.Contains($PropertyString)) { 
@@ -1613,11 +1617,17 @@ Function CreateExcelSheetSNMP {
     $Row++
     $excel.cells.item($row,$Column) = "Location"
     $excel.cells.item($row,$Column+1) = $SNMPSysinfo.Location
-    $Row++
+    $row=$row+2 
     if ($SNMPCommunities) {
-        $excel.cells.item($row,$Column) = "SNMP v1/v2"
+        $excel.cells.item($row,$Column) = "SNMP v1/v2 Community settings"
         $Row++
-        $row = CreateExcelTabel $Sheet $SNMPCommunities
+        $row = CreateExcelTabel $Sheet $SNMPCommunities 3
+    }
+    $row=$row+2 
+    if ($SNMPCommunityHosts) {
+        $excel.cells.item($row,$Column) = "SNMP v1/v2 Hosts"
+        $Row++
+        $row = CreateExcelTabel $Sheet $SNMPCommunityHosts 3
     }
     $Column=1
     if ($SNMPUsers) {
@@ -1952,6 +1962,7 @@ $RouterNetworkArray = [System.Collections.ArrayList]@()
 $RouterDistibuteListArray = [System.Collections.ArrayList]@()
 $RouterNeighborArray = [System.Collections.ArrayList]@()
 $SNMPCommunities = [System.Collections.ArrayList]@()
+$SNMPCommunityHosts = [System.Collections.ArrayList]@()
 $SNMPUsers = [System.Collections.ArrayList]@()
 $SplitDNSArray = [System.Collections.ArrayList]@()
 $VirtualWanLinkMemberArray = [System.Collections.ArrayList]@()
@@ -2085,7 +2096,7 @@ foreach ($Line in $loadedConfig) {
                 }
                 "hosts" {
                     $SUBSection = $True
-                    $SUBSectionConfig = "ConfigSystemSNMPCommunityHosts"                    
+                    $SUBSectionConfig = "ConfigSystemSNMPCommunityHost"                    
                 }     
                 "ipv6" {
                     $SUBSection = $True
@@ -2408,6 +2419,11 @@ foreach ($Line in $loadedConfig) {
                             }
                             else { $BookMarkGroup = $Value }
                         }
+                        "ConfigSystemSNMPCommunityHost" {
+                            $SNMPCommunityHost = InitSystemSNMPCommunityHost
+                            $IDNumber = GetNumber($Value)
+                            $SNMPCommunityHost | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force                           
+                        }
                         "dhcpiprange" {
                             $DHCPRange = InitDHCPRange
                             $IDNumber = GetNumber($Value)
@@ -2515,7 +2531,7 @@ foreach ($Line in $loadedConfig) {
                         }  
                         "ConfigSystemAcme" {
                             $rule = InitAcme
-                            $rule | Add-Member -MemberType NoteProperty -Name Interface -Vakye $Value -force
+                            $rule | Add-Member -MemberType NoteProperty -Name Interface -Value $Value -force
                         }    
                         "ConfigSystemAdmin" {
                             $rule = InitSystemAdmin
@@ -2626,8 +2642,8 @@ foreach ($Line in $loadedConfig) {
                         }
                         "ConfigSystemSNMPCommunity" {
                             $rule = InitSystemSNMPCommunity
+                            #$SNMPCommunityHosts = [System.Collections.ArrayList]@()
                             $IDNumber = GetNumber($Value)
-                            $SNMPHosts = ""
                             $rule | Add-Member -MemberType NoteProperty -Name "ID" -Value $IDNumber -force
                         }
                         "ConfigSystemSNMPUser" {
@@ -2704,6 +2720,16 @@ foreach ($Line in $loadedConfig) {
                         "bookmarkgroup" {
                             $BookMark | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
+                        "ConfigSystemSNMPCommunityHost" {
+                            If ($ConfigLineArray[1] -eq "ip") {
+                                $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3]
+                                $SNMPCommunityHost | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
+                            }
+                            else {
+                                #$Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3]
+                                $SNMPCommunityHost | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $ConfigLineArray[2] -force
+                            }
+                        }                          
                         "dhcpiprange" {
                             $DHCPRange | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
@@ -2762,16 +2788,7 @@ foreach ($Line in $loadedConfig) {
                                 $RouterAccessList | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                             }
                             else { $RouterAccessList | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force }
-                        }
-                        "ConfigSystemSNMPCommunityHosts" {
-                            $Value = GetSubnetCIDR $ConfigLineArray[2] $ConfigLineArray[3]
-                            if ($SNMPHosts) {
-                                $SNMPHosts = $SNMPHosts + "," + $Value
-                            }
-                            else {
-                                $SNMPHosts = $Value
-                            }
-                        }                        
+                        }                      
                         "splitdns" {
                             $SplitDNS | Add-Member -MemberType NoteProperty -Name $ConfigLineArray[1] -Value $Value -force
                         }
@@ -2943,6 +2960,10 @@ foreach ($Line in $loadedConfig) {
                                 $BookMarkArray.Add($BookMark) | Out-Null
                             }  
                         }
+                        "ConfigSystemSNMPCommunityHost" {
+                            $SNMPCommunityHost | Add-Member -MemberType NoteProperty -Name SNMP-Community -Value $rule.Name -force
+                            $SNMPCommunityHosts.Add($SNMPCommunityHost) | Out-Null
+                        }
                         "dhcpiprange" {
                             $DHCPRangeArray.Add($DHCPRange) | Out-Null 
                         }
@@ -3035,7 +3056,7 @@ foreach ($Line in $loadedConfig) {
                             }
                         }
                         "ConfigSystemSNMPCommunity" {
-                            $rule | Add-Member -MemberType NoteProperty -Name hosts -Value $SNMPHosts -force
+                            #$rule | Add-Member -MemberType NoteProperty -Name hosts -Value $SNMPHosts -force
                             $SNMPCommunities.Add($rule)  | Out-Null 
                         }
                         "ConfigSystemSNMPUser" {
@@ -3192,7 +3213,7 @@ foreach ($Line in $loadedConfig) {
                             CreateExcelSheet "AccProfile$VdomName" $rulelist 
                         }
                         "ConfigSystemAcme" {
-                            CreateExcelSheetAcme 
+                            if ($AcmeAccountArray) { CreateExcelSheetAcme }
                         }
                         "ConfigSystemAdmin"  {
                             CreateExcelSheet "AdminUsers$VdomName" $rulelist 
@@ -3240,8 +3261,9 @@ foreach ($Line in $loadedConfig) {
                             $SNMPSysinfo = $rule
                         }
                         "ConfigSystemSNMPCommunity" {
-                            $ruleList = $ruleList  | Sort-Object Name
-                            $SNMPCommunities = $ruleList
+                            #$ruleList = $ruleList  | Sort-Object Name
+                            #$SNMPCommunities = $ruleList
+                            $SNMPCommunities =  $SNMPCommunities | Sort-Object Name
                         }
                         "ConfigSystemSNMPUser" {
                             $SNMPUsers = $SNMPUsers  | Sort-Object Name
