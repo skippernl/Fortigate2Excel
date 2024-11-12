@@ -288,6 +288,15 @@ Function InitFirewallVIP {
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
     return $InitRule
 }
+Function InitFirewallVIPGRP {
+    $InitRule = New-Object System.Object;
+    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
+    $InitRule | Add-Member -type NoteProperty -name UUID -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Interface -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Color -Value ""
+    $InitRule | Add-Member -type NoteProperty -name Member -Value ""
+    return $InitRule
+}
 Function InitRouterAccessList {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name Name -Value ""
@@ -1716,7 +1725,21 @@ Function UpdateMainSheet ( $ActiveArray ) {
     $MainSheet.Cells.Item(3,2) = $Date
     $MainSheet.Cells.Item(3,2).numberformat = "00"
     $MainSheet.Cells.Item(4,1) = 'Config Creation Date'
+    if ($SSHConfig) {
+        $configdate = $date
+    }
+    else {
+        $configdateArray=$Filename.Split("_")
+        $FWMainVersion = $FWVersion.Split(".")
+        if ($FWMainVersion[0] -eq "6") {
+            $configdate = $configdateArray[$configdateArray.Count-2] + $configdateArray[$configdateArray.Count-1]
+        }
+        else {
+            $configdate = $configdateArray[$configdateArray.Count-1]
+        }     
+    }
     $MainSheet.Cells.Item(4,2) = $ConfigDate 
+
     $MainSheet.Cells.Item(4,2).numberformat = "00"                       
     $MainSheet.Cells.Item(5,1) = 'Type'
     $MainSheet.Cells.Item(5,2) = $FWType
@@ -1893,13 +1916,13 @@ $date = Get-Date -Format yyyyMMddHHmm
 $WorkingFolder = (Get-Item $fortigateConfig).DirectoryName
 $FileName = (Get-Item $fortigateConfig).Basename
 if ($SSHConfig) {
-    $configdate = $date
+    #$configdate = $date
     $ExcelFullFilePad = "$workingFolder\$fileName-$ConfigDate"
 }
 else {
-    $configdateArray=$Filename.Split("_")
+    #$configdateArray=$Filename.Split("_")
     #$configdate = $configdateArray[$configdateArray.Count-2] + $configdateArray[$configdateArray.Count-1]
-    $configdate = $configdateArray[$configdateArray.Count-1]
+    #$configdate = $configdateArray[$configdateArray.Count-1]
     $ExcelFullFilePad = "$workingFolder\$fileName"
 }
 
@@ -1917,8 +1940,8 @@ $TocSheet.Cells.Item(1,1)= 'Table of Contents'
 $MergeCells = $TocSheet.Range("A1:C1")
 $MergeCells.MergeCells = $true
 ChangeFontExcelCell $TocSheet 1 1
-if ($Filename.Length -gt 32) {
-    Write-output "Sheetname ($Filename) cannot be longer that 32 caracters shorting name to fit."
+if ($Filename.Length -gt 31) {
+    Write-output "Sheetname ($Filename) cannot be longer that 32 characters shorting name to fit."
     $SheetName = $FileName.Substring(0,31)
 }
 else {
@@ -2079,7 +2102,11 @@ foreach ($Line in $loadedConfig) {
                         "vip" {
                             $ConfigSection = "ConfigFirewallVIP"
                             Write-Output "Config firewall vip line found."
-                        }                 
+                        }  
+                        "vipgrp" {
+                            $ConfigSection = "ConfigFirewallVIPGRP"
+                            Write-Output "Config firewall vipgrp line found."
+                        }           
                     }
                 }  
                 "Gui-dashboard" {
@@ -2688,7 +2715,11 @@ foreach ($Line in $loadedConfig) {
                         }                          
                         "ConfigFirewallVIP" {
                             $rule = InitFirewallVip
-                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force                        
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force                 
+                        }
+                        "ConfigFirewallVIPGRP" {
+                            $rule = InitFirewallVipgrp
+                            $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force                 
                         }
                         "Configvpnipsecphase1" {
                             $rule = Initvpnipsecphase1
@@ -3068,7 +3099,9 @@ foreach ($Line in $loadedConfig) {
                             }
                             else { $ruleList.Add($rule) | Out-Null }
                         }
-                        Default { $ruleList.Add($rule) | Out-Null  }
+                        Default { 
+                            $ruleList.Add($rule) | Out-Null
+                        }
                     }   # switch ($ConfigSection)  
                 }   # else if ($SUBSection)
             }   # if ($ConfigSection)
@@ -3093,6 +3126,8 @@ foreach ($Line in $loadedConfig) {
                         }                    
                     }
                     $SUBSection = $False
+                    #Segment END in configfile this should be the last SubSectionConfig line
+                    $SUBSectionConfig = ""
                     switch ($ConfigSection) {
                         "VIPRealservers" {
                             $ruleList.Add($rule) | Out-Null 
@@ -3165,7 +3200,11 @@ foreach ($Line in $loadedConfig) {
                         "ConfigFirewallVIP" {
                             $rulelist = $rulelist | Sort-Object Name,ID
                             CreateExcelSheet "VIP$VdomName" $rulelist
-                        }                        
+                        }         
+                        "ConfigFirewallVIPGRP" {
+                            $rulelist = $rulelist | Sort-Object Name,ID
+                            CreateExcelSheet "VIPGroup$VdomName" $rulelist
+                        }                   
                         "ConfigRouterAccessList" {
                             $RouterAccessListArray = $RouterAccessListArray | Sort-Object Name,ID
                             CreateExcelSheet "Router_AccesList$vdomName" $RouterAccessListArray
