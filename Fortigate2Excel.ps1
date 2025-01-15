@@ -2610,7 +2610,7 @@ foreach ($Line in $loadedConfig) {
                             $rule = InitFirewallAddressGroup6
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
                         }                         
-                        "ConfigFirwallShaperPerIPShaper" {
+                        "ConfigFirewallShaperPerIPShaper" {
                             $rule = InitFirewallshaperperipshaper
                             $rule | Add-Member -MemberType NoteProperty -Name "Name" -Value $Value -force
                         }
@@ -3185,7 +3185,7 @@ foreach ($Line in $loadedConfig) {
                             $rulelist = $rulelist | Sort-Object Name
                             CreateExcelSheet "Services_Group$VdomName" $rulelist  
                         }
-                        "ConfigFirwallShaperPerIPShaper" {
+                        "ConfigFirewallShaperPerIPShaper" {
                             $rulelist = $rulelist | Sort-Object Name
                             CreateExcelSheet "ShaperPerIP$VdomName" $rulelist                               
                         }
