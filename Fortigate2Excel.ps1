@@ -278,10 +278,11 @@ Function InitFirewallVIP {
     $InitRule | Add-Member -type NoteProperty -name comment -Value ""
     $InitRule | Add-Member -type NoteProperty -name color -Value ""
     $InitRule | Add-Member -type NoteProperty -name type -Value ""
-    #When using loadbalance this values are used
+    #When using loadbalance these values are used
     #Setting ldb-method to none to indicate no loadbalance is done
     #this gets overwritten when loadbalance is used
     $InitRule | Add-Member -type NoteProperty -name ldb-method -Value "none"
+    $InitRule | Add-Member -type NoteProperty -name http-host -Value ""
     $InitRule | Add-Member -type NoteProperty -name ip -Value ""
     $InitRule | Add-Member -type NoteProperty -name port -Value ""
     $InitRule | Add-Member -type NoteProperty -name monitor -Value ""
@@ -1758,7 +1759,9 @@ Function UpdateMainSheet ( $ActiveArray ) {
     foreach ($ActiveMember in $ActiveArray) {
         foreach ($Noteproperty in $NoteProperties) {
             $PropertyString = [string]$NoteProperty.Name
-            if (($PropertyString -eq "timezone") -and $TimeZoneArray) {
+            [Int32]$OutNumber = $null
+            #Test if Timezone is a number, if it is find the timezone name
+            if (($PropertyString -eq "timezone") -and ([Int32]::TryParse($PropertyString,[ref]$OutNumber))) {
                 $TimeZoneNumber = GetNumber $ActiveMember.$PropertyString
                 $Value = $TimeZoneArray[$TimeZoneNumber].TimeName
             }
@@ -2175,6 +2178,7 @@ foreach ($Line in $loadedConfig) {
                 "realservers" {
                     $SUBSection = $True
                     $SUBSectionConfig = "VIPrealservers"
+                    $ConfigRealservers = $true
                     $RuleRealServer = $rule
                 }
                 "redistribute" {
@@ -3082,9 +3086,11 @@ foreach ($Line in $loadedConfig) {
                             $DHCPReservedAddressArray = [System.Collections.ArrayList]@()
                         }                        
                         "ConfigFirewallVIP"  {
-                            if ($SUBSectionConfig -ne "VIPRealservers") {
+                            #if ($SUBSectionConfig -ne "VIPRealservers") {
+                            if (!($ConfigRealservers)) {
                                 $ruleList.Add($rule)  | Out-Null 
                             }
+                            $ConfigRealservers = $False
                         }
                         "ConfigSystemSNMPCommunity" {
                             #$rule | Add-Member -MemberType NoteProperty -Name hosts -Value $SNMPHosts -force
@@ -3128,11 +3134,11 @@ foreach ($Line in $loadedConfig) {
                     $SUBSection = $False
                     #Segment END in configfile this should be the last SubSectionConfig line
                     $SUBSectionConfig = ""
-                    switch ($ConfigSection) {
-                        "VIPRealservers" {
-                            $ruleList.Add($rule) | Out-Null 
-                        } 
-                    }
+                    #switch ($ConfigSection) {
+                    #    "VIPRealservers" {
+                    #        $ruleList.Add($rule) | Out-Null 
+                    #    } 
+                    #}
                 } 
             } # if ($SUBSection)
             else {            
