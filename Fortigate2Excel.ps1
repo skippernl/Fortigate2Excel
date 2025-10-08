@@ -866,54 +866,63 @@ Function InitVirtualWanLinkService {
     return $InitRule  
 }
 Function InitVpnIpsecPhase1 {
-    $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
-    $InitRule | Add-Member -type NoteProperty -name type -Value ""
-    $InitRule | Add-Member -type NoteProperty -name keylife "86400"
-    $InitRule | Add-Member -type NoteProperty -name interface -Value ""
-    $InitRule | Add-Member -type NoteProperty -name peertype -Value ""
-    $InitRule | Add-Member -type NoteProperty -name proposal -Value ""
-    $InitRule | Add-Member -type NoteProperty -name comments -Value ""
-    $InitRule | Add-Member -type NoteProperty -name dhgrp -Value ""
-    #default dpd = enable
-    $InitRule | Add-Member -type NoteProperty -name dpd -Value "enable"
-    #default ikeversion = 1
-    $InitRule | Add-Member -type NoteProperty -name ike-version -Value "1"
-    $InitRule | Add-Member -type NoteProperty -name nattraversal -Value "enabled"
-    $InitRule | Add-Member -type NoteProperty -name remote-gw -Value ""
-    $InitRule | Add-Member -type NoteProperty -name remotegw-ddns -Value ""
-    $InitRule | Add-Member -type NoteProperty -name peerid -Value ""
-    $InitRule | Add-Member -type NoteProperty -name authusrgrp -Value ""
-    $InitRule | Add-Member -type NoteProperty -name ipv4-end-ip -Value ""
-    $InitRule | Add-Member -type NoteProperty -name ipv4-netmask -Value ""
-    $InitRule | Add-Member -type NoteProperty -name ipv4-start-ip -Value ""
-    $InitRule | Add-Member -type NoteProperty -name mode-cfg -Value ""
-    $InitRule | Add-Member -type NoteProperty -name net-device -Value ""
-    $InitRule | Add-Member -type NoteProperty -name wizard-type -Value ""
-    $InitRule | Add-Member -type NoteProperty -name xauthtype -Value ""
-    #Next line gets filterd out when creating the ExcelSheet
-    $InitRule | Add-Member -type NoteProperty -name psksecret -Value ""
+$InitRule = New-Object System.Object
+
+    $InitRule | Add-Member -Type NoteProperty -Name authusrgrp -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name comments -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name dhgrp -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name dpd -Value "enable"          # default dpd = enable
+    $InitRule | Add-Member -Type NoteProperty -Name dpd-retryinterval -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name eap -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name eap-identity -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name ike-version -Value "1"       # default ikeversion = 1
+    $InitRule | Add-Member -Type NoteProperty -Name interface -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name ipv4-dns-server1 -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name ipv4-dns-server2 -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name ipv4-end-ip -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name ipv4-netmask -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name ipv4-split-include -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name ipv4-start-ip -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name keylife -Value "86400"
+    $InitRule | Add-Member -Type NoteProperty -Name mode-cfg -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name name -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name nattraversal -Value "enabled"
+    $InitRule | Add-Member -Type NoteProperty -Name net-device -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name peerid -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name peertype -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name proposal -Value ""
+    # Next line gets filtered out when creating the Excel sheet
+    $InitRule | Add-Member -Type NoteProperty -Name psksecret -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name remote-gw -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name remotegw-ddns -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name transport -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name type -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name wizard-type -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name xauthtype -Value ""
+
     return $InitRule
 }
 Function InitVpnIpsecPhase2 {
     $InitRule = New-Object System.Object;
-    $InitRule | Add-Member -type NoteProperty -name Name -Value ""
-    $InitRule | Add-Member -type NoteProperty -name phase1name -Value ""
-    $InitRule | Add-Member -type NoteProperty -name proposal -Value ""
-    $InitRule | Add-Member -type NoteProperty -name dhgrp -Value "14,5"
-    $InitRule | Add-Member -type NoteProperty -name replay -Value "enable"
-    $InitRule | Add-Member -type NoteProperty -name auto-negotiate -Value ""
-    $InitRule | Add-Member -type NoteProperty -name comments -Value ""
-    $InitRule | Add-Member -type NoteProperty -name keylifeseconds -Value "43200"
-    #default has no data in config setting src-subnet to 0.0.0.0/0 it gets overwritten if needed
-    $InitRule | Add-Member -type NoteProperty -name src-subnet -Value "0.0.0.0/0"
-    $InitRule | Add-Member -type NoteProperty -name src-name -Value ""
-    #default has no data in config setting dst-subnet to 0.0.0.0/0 it gets overwritten if needed
-    $InitRule | Add-Member -type NoteProperty -name dst-subnet -Value "0.0.0.0/0"
-    $InitRule | Add-Member -type NoteProperty -name dst-name -Value ""
-    #default keepalive = disable
-    $InitRule | Add-Member -type NoteProperty -name keepalive -Value "disable"
-    $InitRule | Add-Member -type NoteProperty -name pfs -Value "enable"
+
+    $InitRule | Add-Member -Type NoteProperty -Name auto-negotiate -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name comments -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name dhgrp -Value "14,5"
+    $InitRule | Add-Member -Type NoteProperty -Name dst-name -Value ""
+    # default has no data in config setting dst-subnet to 0.0.0.0/0 it gets overwritten if needed
+    $InitRule | Add-Member -Type NoteProperty -Name dst-subnet -Value "0.0.0.0/0"
+    # default keepalive = disable
+    $InitRule | Add-Member -Type NoteProperty -Name keepalive -Value "disable"
+    $InitRule | Add-Member -Type NoteProperty -Name keylifeseconds -Value "43200"
+    $InitRule | Add-Member -Type NoteProperty -Name name -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name pfs -Value "enable"
+    $InitRule | Add-Member -Type NoteProperty -Name phase1name -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name proposal -Value ""
+    $InitRule | Add-Member -Type NoteProperty -Name replay -Value "enable"
+    $InitRule | Add-Member -Type NoteProperty -Name src-name -Value ""
+    # default has no data in config setting src-subnet to 0.0.0.0/0 it gets overwritten if needed
+    $InitRule | Add-Member -Type NoteProperty -Name src-subnet -Value "0.0.0.0/0"
+
     return $InitRule
 }
 #Function InitVPNSSLWebPortal
