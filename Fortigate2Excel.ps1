@@ -1132,35 +1132,60 @@ Function Convert-NumberToA1 {
     } 
     Return $a1Value 
 }
-#Function CreateExcelTabel ($ActiveSheet, $ActiveArray)
-#This Function Creates the Excel tabel 
+#Function CreateExcelTable ($ActiveSheet, $ActiveArray)
+#This Function Creates the Excel table 
 #$ActiveSheet is the used Excelsheet
 #$ActiveArray is the array that needs to be exported
-Function CreateExcelTabel ($ActiveSheet, $ActiveArray, $StartColomn=1) {
+Function CreateExcelTable ($ActiveSheet, $ActiveArray, $StartColomn=1) {
     $NoteProperties = SkipEmptyNoteProperties $ActiveArray
     $Column=$StartColomn
+    $IDNotePropertyFound = $false
+    #IF the table has an ID or name start with it.
+    foreach ($Noteproperty in $NoteProperties) {
+        $PropertyString = [string]$NoteProperty.Name
+        if ($PropertyString -eq "ID") { 
+            $excel.cells.item($row,$Column) = $PropertyString
+            $Column++
+            $IDNotePropertyFound = $True
+        }
+    }    
     foreach ($Noteproperty in $NoteProperties) {
         $PropertyString = [string]$NoteProperty.Name
         #Keep passwords/psksecrets out of the documentation
-        if (!$SkipExportProperties.Contains($PropertyString)) { 
+        if (!$SkipExportProperties.Contains($PropertyString) -or $IDNotePropertyFound) { 
             $excel.cells.item($row,$Column) = $PropertyString
             $Column++
         }
     }
     $StartRow = $Row
     $Row++
+    $Column=$StartColomn
+    if ($IDNotePropertyFound) {
+        foreach ($ActiveMember in $ActiveArray) {
+            foreach ($Noteproperty in $NoteProperties) {
+                $PropertyString = [string]$NoteProperty.Name
+                if ($PropertyString -eq "ID") { 
+                    $Value = $ActiveMember.$PropertyString         
+                    $excel.cells.item($row,$Column) = $Value
+                }
+            }                      
+            $row++
+        }
+        $Column++
+        $Row = $StartRow+1
+    }  
     foreach ($ActiveMember in $ActiveArray) {
-        #$Column=1
-        $Column=$StartColomn
         foreach ($Noteproperty in $NoteProperties) {
             $PropertyString = [string]$NoteProperty.Name
-            if (!$SkipExportProperties.Contains($PropertyString)) { 
+            if (!$SkipExportProperties.Contains($PropertyString) -or $PropertyString -eq "ID") { 
                 $Value = $ActiveMember.$PropertyString         
                 $excel.cells.item($row,$Column) = $Value
                 $Column++
             }
         }                      
         $row++
+        $Column=$StartColomn
+        if ($IDNotePropertyFound) { $Column++ }
     }    
     #No need to filter if there is only one row.
     if (!($Global:SkipFilter) -and ($ActiveArray.Count -gt 1)) {
@@ -1181,7 +1206,7 @@ Function CreateExcelSheet ($SheetName, $SheetArray) {
         $excel.cells.item($row,$Column) = $SheetName 
         ChangeFontExcelCell $Sheet $row $Column  
         $row=$row+2
-        $row = CreateExcelTabel $Sheet $SheetArray
+        $row = CreateExcelTable $Sheet $SheetArray
         $UsedRange = $Sheet.usedRange                  
         $UsedRange.EntireColumn.AutoFit() | Out-Null
     }
@@ -1207,14 +1232,14 @@ Function CreateExcelSheetDHCP {
     $excel.cells.item($row,$Column) = "Normal DHCP options"
     ChangeFontExcelCell $Sheet $row $Column
     $row++
-    $row = CreateExcelTabel $Sheet $rule
+    $row = CreateExcelTable $Sheet $rule
     $row++
     if ($DHCPOptionsArray) {                
         $Column=1
         $excel.cells.item($row,$Column) = "Extra DHCP options"
         ChangeFontExcelCell $Sheet $row $Column
         $row++   
-        $row = CreateExcelTabel $Sheet $DHCPOptionsArray   
+        $row = CreateExcelTable $Sheet $DHCPOptionsArray   
     }
     $row++
     if ($DHCPRangeArray) {
@@ -1227,7 +1252,7 @@ Function CreateExcelSheetDHCP {
             $SkipFilter = $false
         }
         $DHCPRangeArray = $DHCPRangeArray | Sort-Object ID 
-        $row = CreateExcelTabel $Sheet $DHCPRangeArray
+        $row = CreateExcelTable $Sheet $DHCPRangeArray
         $row++ 
         $SkipFilter = $true
     }
@@ -1243,7 +1268,7 @@ Function CreateExcelSheetDHCP {
         if ($RemberSkipFilter) {
             $SkipFilter = $false
         }
-        $row = CreateExcelTabel $Sheet $DHCPReservedAddressArray     
+        $row = CreateExcelTable $Sheet $DHCPReservedAddressArray     
     }     
     $UsedRange = $Sheet.usedRange                  
     $UsedRange.EntireColumn.AutoFit() | Out-Null    
@@ -1267,13 +1292,13 @@ Function CreateExcelSheetDNSDatabase {
         $excel.cells.item($row,$Column) = "DNSServers"
         ChangeFontExcelCell $Sheet $row $Column
         $row++    
-        $Row = CreateExcelTabel $Sheet $ruleList  
+        $Row = CreateExcelTable $Sheet $ruleList  
         if ($DNSEntryArray) {
             $excel.cells.item($row,$Column) = "DNS Entries"
             ChangeFontExcelCell $Sheet $row $Column
             $row++    
             $DNSEntryArray = $DNSEntryArray | Sort-Object ID  
-            $row = CreateExcelTabel $Sheet $DNSEntryArray             
+            $row = CreateExcelTable $Sheet $DNSEntryArray             
         }
         $UsedRange = $Sheet.usedRange                  
         $UsedRange.EntireColumn.AutoFit() | Out-Null 
@@ -1293,13 +1318,13 @@ Function CreateExcelSheetHA {
         $excel.cells.item($row,$Column) = $SheetName 
         ChangeFontExcelCell $Sheet $row $Column 
         $row=$row+2
-        $row = CreateExcelTabel $Sheet $rule
+        $row = CreateExcelTable $Sheet $rule
         if ($HAMGMTInterfaceArray) {
             $Column=1
             $excel.cells.item($row,$Column) = "HA management interface(s)" 
             ChangeFontExcelCell $Sheet $row $Column
             $Row++      
-            $row = CreateExcelTabel $Sheet $HAMGMTInterfaceArray 
+            $row = CreateExcelTable $Sheet $HAMGMTInterfaceArray 
         }      
         $UsedRange = $Sheet.usedRange                  
         $UsedRange.EntireColumn.AutoFit() | Out-Null      
@@ -1316,7 +1341,7 @@ Function CreateExcelSheetVPNSSLSettings {
     $excel.cells.item($row,$Column) = $SheetName 
     ChangeFontExcelCell $Sheet $row $Column  
     $row=$row+2
-    $row = CreateExcelTabel $Sheet $rulelist
+    $row = CreateExcelTable $Sheet $rulelist
     $Row++
     if ($AuthenticationRuleArray) {
         $AuthenticationRuleArray = $AuthenticationRuleArray | Sort-Object ID 
@@ -1325,7 +1350,7 @@ Function CreateExcelSheetVPNSSLSettings {
         $excel.cells.item($row,$Column) = "Authentication Rule(s)"
         ChangeFontExcelCell $Sheet $row $Column
         $row++    
-        $row = CreateExcelTabel $Sheet $AuthenticationRuleArray
+        $row = CreateExcelTable $Sheet $AuthenticationRuleArray
     }
     $UsedRange = $Sheet.usedRange               
     $UsedRange.EntireColumn.AutoFit() | Out-Null 
@@ -1341,7 +1366,7 @@ Function CreateExcelSheetSSLwebportal {
     $excel.cells.item($row,$Column) = $SheetName 
     ChangeFontExcelCell $Sheet $row $Column  
     $row=$row+2
-    $row = CreateExcelTabel $Sheet $rulelist
+    $row = CreateExcelTable $Sheet $rulelist
     $row++
     if ($SplitDNSArray) {
         $SplitDNSArray = $SplitDNSArray | Sort-Object PortalName,ID
@@ -1350,7 +1375,7 @@ Function CreateExcelSheetSSLwebportal {
         $excel.cells.item($row,$Column) = "Split DNS Configuration"
         ChangeFontExcelCell $Sheet $row $Column
         $row++    
-        $row = CreateExcelTabel $Sheet $SplitDNSArray 
+        $row = CreateExcelTable $Sheet $SplitDNSArray 
     }  
     $row++ 
     if ($BookmarkArray) {
@@ -1360,7 +1385,7 @@ Function CreateExcelSheetSSLwebportal {
         $excel.cells.item($row,$Column) = "Configured bookmarks"
         ChangeFontExcelCell $Sheet $row $Column
         $row++    
-        $row = CreateExcelTabel $Sheet $BookmarkArray
+        $row = CreateExcelTable $Sheet $BookmarkArray
     }  
     $row++ 
     if ($OSCheckListArray) {
@@ -1370,7 +1395,7 @@ Function CreateExcelSheetSSLwebportal {
         $excel.cells.item($row,$Column) = "Configured OS check"
         ChangeFontExcelCell $Sheet $row $Column
         $row++    
-        $row = CreateExcelTabel $Sheet $OSCheckListArray
+        $row = CreateExcelTable $Sheet $OSCheckListArray
     }     
     $UsedRange = $Sheet.usedRange               
     $UsedRange.EntireColumn.AutoFit() | Out-Null      
@@ -1396,14 +1421,14 @@ Function CreateExcelSheetVirtualWanLink {
     $excel.cells.item($row,$Column) = "Global $ExcelSDWANText Link settings"
     ChangeFontExcelCell $Sheet $row $Column
     $row++
-    $row = CreateExcelTabel $Sheet $rule 
+    $row = CreateExcelTable $Sheet $rule 
     if ($VirtualWanLinkMemberArray) {                
         $row++   
         $Column=1
         $excel.cells.item($row,$Column) = "Link $ExcelSDWANText members"
         ChangeFontExcelCell $Sheet $row $Column
         $row++    
-        $row = CreateExcelTabel $Sheet $VirtualWanLinkMemberArray  
+        $row = CreateExcelTable $Sheet $VirtualWanLinkMemberArray  
     }  
     if ($VirtualWanLinkHealthCheckArray) {                
         $row++   
@@ -1411,7 +1436,7 @@ Function CreateExcelSheetVirtualWanLink {
         $excel.cells.item($row,$Column) = "Link $ExcelSDWANText healthcheck"
         ChangeFontExcelCell $Sheet $row $Column
         $row++
-        $row = CreateExcelTabel $Sheet $VirtualWanLinkHealthCheckArray        
+        $row = CreateExcelTable $Sheet $VirtualWanLinkHealthCheckArray        
     }   
     if ($VirtualWanLinkServiceArray) {                
         $row++   
@@ -1419,7 +1444,7 @@ Function CreateExcelSheetVirtualWanLink {
         $excel.cells.item($row,$Column) = "Link $ExcelSDWANText service"
         ChangeFontExcelCell $Sheet $row $Column
         $row++
-        $row = CreateExcelTabel $Sheet $VirtualWanLinkServiceArray        
+        $row = CreateExcelTable $Sheet $VirtualWanLinkServiceArray        
     }      
     $UsedRange = $Sheet.usedRange                  
     $UsedRange.EntireColumn.AutoFit() | Out-Null                  
@@ -1435,7 +1460,7 @@ Function CreateExcelSheetAcme {
     $excel.cells.item($row,$Column) = $SheetName 
     ChangeFontExcelCell $Sheet $row $Column  
     $row=$row+2 
-    $row = CreateExcelTabel $Sheet $AcmeAccountArray  
+    $row = CreateExcelTable $Sheet $AcmeAccountArray  
     $UsedRange = $Sheet.usedRange                  
     $UsedRange.EntireColumn.AutoFit() | Out-Null    
 }
@@ -1452,20 +1477,20 @@ Function CreateExcelSheetBGP {
         $excel.cells.item($row,$Column) = $SheetName 
         ChangeFontExcelCell $Sheet $row $Column  
         $row=$row+2
-        $row = CreateExcelTabel $Sheet $rule
+        $row = CreateExcelTable $Sheet $rule
         if ($RouterNeighborArray) {
             $Column=1
             $excel.cells.item($row,$Column) = "BGP Neighbors" 
             ChangeFontExcelCell $Sheet $row $Column
             $Row++      
-            $row = CreateExcelTabel $Sheet $RouterNeighborArray 
+            $row = CreateExcelTable $Sheet $RouterNeighborArray 
         }
         if ($RouterNetworkArray) {
             $Column=1
             $excel.cells.item($row,$Column) = "Networks"
             ChangeFontExcelCell $Sheet $row $Column
             $Row++  
-            $row = CreateExcelTabel $Sheet $RouterNetworkArray
+            $row = CreateExcelTable $Sheet $RouterNetworkArray
         }
         if ($RouterRedistibuteArray) {
             $Column=1
@@ -1497,7 +1522,7 @@ Function CreateExcelSheetISIS {
         $excel.cells.item($row,$Column) = $SheetName 
         ChangeFontExcelCell $Sheet $row $Column  
         $row=$row+2
-        $row = CreateExcelTabel $Sheet $rule
+        $row = CreateExcelTable $Sheet $rule
         if ($RouterRedistibuteArray) {
             $Column=1
             $excel.cells.item($row,$Column) = "Redistribute routes"
@@ -1550,7 +1575,7 @@ Function CreateExcelSheetOSPF {
             $excel.cells.item($row,$Column) = "OSPF Networks"
             ChangeFontExcelCell $Sheet $row $Column 
             $Row++     
-            $row = CreateExcelTabel $Sheet $RouterNetworkArray 
+            $row = CreateExcelTable $Sheet $RouterNetworkArray 
         }  
         if ($RouterInterfaceArray) {
             if ($RemberSkipFilter) {
@@ -1560,7 +1585,7 @@ Function CreateExcelSheetOSPF {
             $excel.cells.item($row,$Column) = "OSPF Interfaces"
             ChangeFontExcelCell $Sheet $row $Column 
             $Row++      
-            $row = CreateExcelTabel $Sheet $RouterInterfaceArray
+            $row = CreateExcelTable $Sheet $RouterInterfaceArray
             if ($RemberSkipFilter) {
                 $SkipFilter = $true
             }
@@ -1602,7 +1627,7 @@ Function CreateExcelSheetOSPF {
             $excel.cells.item($row,$Column) = "OSPF Distributelist"
             ChangeFontExcelCell $Sheet $row $Column   
             $Row++     
-            $row = CreateExcelTabel $Sheet $RouterDistibuteListArray
+            $row = CreateExcelTable $Sheet $RouterDistibuteListArray
         }     
         $UsedRange = $Sheet.usedRange                  
         $UsedRange.EntireColumn.AutoFit() | Out-Null  
@@ -1640,19 +1665,19 @@ Function CreateExcelSheetSNMP {
     if ($SNMPCommunities) {
         $excel.cells.item($row,$Column) = "SNMP v1/v2 Community settings"
         $Row++
-        $row = CreateExcelTabel $Sheet $SNMPCommunities 3
+        $row = CreateExcelTable $Sheet $SNMPCommunities 2
     }
     $row=$row+2 
     if ($SNMPCommunityHosts) {
         $excel.cells.item($row,$Column) = "SNMP v1/v2 Hosts"
         $Row++
-        $row = CreateExcelTabel $Sheet $SNMPCommunityHosts 3
+        $row = CreateExcelTable $Sheet $SNMPCommunityHosts 2
     }
     $Column=1
     if ($SNMPUsers) {
         $excel.cells.item($row,$Column) = "SNMP v3"
         $Row++
-        $row = CreateExcelTabel $Sheet $SNMPUsers
+        $row = CreateExcelTable $Sheet $SNMPUsers 2
     }
     $UsedRange = $Sheet.usedRange                  
     $UsedRange.EntireColumn.AutoFit() | Out-Null 
@@ -2006,7 +2031,7 @@ $VirtualWanLinkServiceArray = [System.Collections.ArrayList]@()
 #Make sure $OSPFRouterID has a known value
 $OSPFRouterID = "no-ospf"
 #Set all properties that contain password to be excluded from the excel file.
-$SkipExportProperties = MakeArray "passwd" "password" "psksecret" "secret" "ppk-secret" "auth-password-l1" "auth-password-l2" "auth-pwd" "privatekey"
+$SkipExportProperties = MakeArray "old-password" "passwd" "password" "psksecret" "secret" "ppk-secret" "auth-password-l1" "auth-password-l2" "auth-pwd" "privatekey"
 foreach ($Line in $loadedConfig) {
     $Proc = $Counter/$MaxCounter*100
     $ProcString = $Proc.ToString("0.00")
