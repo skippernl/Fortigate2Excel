@@ -1018,7 +1018,7 @@ Function CleanSheetName ($CSName) {
     $CSName = $CSName.Replace(" ","_")
     $CSName = $CSName.Replace("\","_")
     $CSName = $CSName.Replace("/","_")
-    $CSName = $CSName.Replace("[]","_")
+    $CSName = $CSName.Replace("[","_")
     $CSName = $CSName.Replace("]","_")
     $CSName = $CSName.Replace("*","_")
     $CSName = $CSName.Replace("?","_")
@@ -1092,7 +1092,7 @@ Function CopyArrayMember ($ActiveArray) {
     Return $NewMember
 }
 #Function SkipEmptyNoteProperties ($SkipEmptyNotePropertiesArray)
-#This function Loopt through all available noteproperties and checks if it is used.
+#This function Loops through all available noteproperties and checks if it is used.
 #If it is not used the property will not be returned as it is not needed in the export.
 Function SkipEmptyNoteProperties ($SkipEmptyNotePropertiesArray) {
     $ReturnNoteProperties = [System.Collections.ArrayList]@()
@@ -1110,6 +1110,7 @@ Function SkipEmptyNoteProperties ($SkipEmptyNotePropertiesArray) {
     }
     return $ReturnNoteProperties
 }
+#Found this online 
 Function Convert-NumberToA1 { 
     <# 
     .SYNOPSIS 
@@ -1142,7 +1143,7 @@ Function CreateExcelTable ($ActiveSheet, $ActiveArray, $StartColomn=1) {
     $StartRow = $Row
     $IDNotePropertyFound = $false
     $NameNotePropertyFound = $false
-    #IF the table has an ID or name start with it.
+    #If the table has an ID or name start with it.
     foreach ($Noteproperty in $NoteProperties) {
         $PropertyString = [string]$NoteProperty.Name
         if ($PropertyString -eq "ID") { 
@@ -1151,6 +1152,7 @@ Function CreateExcelTable ($ActiveSheet, $ActiveArray, $StartColomn=1) {
             $IDNotePropertyFound = $True
         }
     }    
+    #if the table has a name (Name) then start with it (when there also is an ID it will be the second column)
     foreach ($Noteproperty in $NoteProperties) {
         $PropertyString = [string]$NoteProperty.Name
         if (($PropertyString -eq "Name") -or ($PropertyString -eq "name")) { 
@@ -1213,7 +1215,6 @@ Function CreateExcelTable ($ActiveSheet, $ActiveArray, $StartColomn=1) {
     }    
     #No need to filter if there is only one row.
     if (!($Global:SkipFilter) -and ($ActiveArray.Count -gt 1)) {
-        #Fix sorting when $ActiveArray has an ID AND Name
         $ColumExcel = Convert-NumberToA1 $NoteProperties.count
         $Sheet.Range("A$($StartRow):$($ColumExcel)$($Row-1)").AutoFilter()  | Out-Null
     }
