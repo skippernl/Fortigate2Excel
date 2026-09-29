@@ -173,7 +173,7 @@ Function InitFirewallLdbMonitor {
 Function InitFirewallRule {
     $InitRule = New-Object System.Object;
     $InitRule | Add-Member -type NoteProperty -name ID -Value ""
-    $InitRule | Add-Member -type NoteProperty -name action -Value ""
+    $InitRule | Add-Member -type NoteProperty -name action -Value "deny"
     $InitRule | Add-Member -type NoteProperty -name application-list -Value ""
     $InitRule | Add-Member -type NoteProperty -name av-profile -Value ""
     $InitRule | Add-Member -type NoteProperty -name comments -Value ""
@@ -1139,7 +1139,9 @@ Function Convert-NumberToA1 {
 Function CreateExcelTable ($ActiveSheet, $ActiveArray, $StartColomn=1) {
     $NoteProperties = SkipEmptyNoteProperties $ActiveArray
     $Column=$StartColomn
+    $StartRow = $Row
     $IDNotePropertyFound = $false
+    $NameNotePropertyFound = $false
     #IF the table has an ID or name start with it.
     foreach ($Noteproperty in $NoteProperties) {
         $PropertyString = [string]$NoteProperty.Name
@@ -1151,13 +1153,20 @@ Function CreateExcelTable ($ActiveSheet, $ActiveArray, $StartColomn=1) {
     }    
     foreach ($Noteproperty in $NoteProperties) {
         $PropertyString = [string]$NoteProperty.Name
+        if (($PropertyString -eq "Name") -or ($PropertyString -eq "name")) { 
+            $excel.cells.item($row,$Column) = $PropertyString
+            $Column++
+            $NameNotePropertyFound = $True
+        }
+    }       
+    foreach ($Noteproperty in $NoteProperties) {
+        $PropertyString = [string]$NoteProperty.Name
         #Keep passwords/psksecrets out of the documentation
-        if (!$SkipExportProperties.Contains($PropertyString) -or $IDNotePropertyFound) { 
+        if (!$SkipExportProperties.Contains($PropertyString)) { 
             $excel.cells.item($row,$Column) = $PropertyString
             $Column++
         }
     }
-    $StartRow = $Row
     $Row++
     $Column=$StartColomn
     if ($IDNotePropertyFound) {
@@ -1172,12 +1181,26 @@ Function CreateExcelTable ($ActiveSheet, $ActiveArray, $StartColomn=1) {
             $row++
         }
         $Column++
-        $Row = $StartRow+1
     }  
+    if ($NameNotePropertyFound) {
+        $Row = $StartRow + 1
+        foreach ($ActiveMember in $ActiveArray) {
+            foreach ($Noteproperty in $NoteProperties) {
+                $PropertyString = [string]$NoteProperty.Name
+                if ($PropertyString -eq "name") { 
+                    $Value = $ActiveMember.$PropertyString         
+                    $excel.cells.item($row,$Column) = $Value
+                }
+            }                      
+            $row++
+        }
+        $Column++
+    }      
+    $Row = $StartRow + 1
     foreach ($ActiveMember in $ActiveArray) {
         foreach ($Noteproperty in $NoteProperties) {
             $PropertyString = [string]$NoteProperty.Name
-            if (!$SkipExportProperties.Contains($PropertyString) -or $PropertyString -eq "ID") { 
+            if (!$SkipExportProperties.Contains($PropertyString)) { 
                 $Value = $ActiveMember.$PropertyString         
                 $excel.cells.item($row,$Column) = $Value
                 $Column++
@@ -1186,9 +1209,11 @@ Function CreateExcelTable ($ActiveSheet, $ActiveArray, $StartColomn=1) {
         $row++
         $Column=$StartColomn
         if ($IDNotePropertyFound) { $Column++ }
+        if ($NameNotePropertyFound) { $Column++ }
     }    
     #No need to filter if there is only one row.
     if (!($Global:SkipFilter) -and ($ActiveArray.Count -gt 1)) {
+        #Fix sorting when $ActiveArray has an ID AND Name
         $ColumExcel = Convert-NumberToA1 $NoteProperties.count
         $Sheet.Range("A$($StartRow):$($ColumExcel)$($Row-1)").AutoFilter()  | Out-Null
     }
@@ -2031,7 +2056,8 @@ $VirtualWanLinkServiceArray = [System.Collections.ArrayList]@()
 #Make sure $OSPFRouterID has a known value
 $OSPFRouterID = "no-ospf"
 #Set all properties that contain password to be excluded from the excel file.
-$SkipExportProperties = MakeArray "old-password" "passwd" "password" "psksecret" "secret" "ppk-secret" "auth-password-l1" "auth-password-l2" "auth-pwd" "privatekey"
+#ID name (and Name) will be handeld seperatly so skip for export
+$SkipExportProperties = MakeArray "ID" "name" "Name" "old-password" "passwd" "password" "psksecret" "secret" "ppk-secret" "auth-password-l1" "auth-password-l2" "auth-pwd" "privatekey"
 foreach ($Line in $loadedConfig) {
     $Proc = $Counter/$MaxCounter*100
     $ProcString = $Proc.ToString("0.00")
